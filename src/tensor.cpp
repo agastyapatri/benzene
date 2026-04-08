@@ -1,9 +1,11 @@
 #include "tensor.hpp"
 #include <algorithm>
 #include <cassert>
-#include "bz_rand.hpp"
+#include <random> 
+#include <cmath>
+// #include "bz_rand.hpp"
 
-bz::tensor::tensor(std::vector<int> shape){
+bz::tensor::tensor(bz::vi32 shape){
 	_shape = shape;
 	_ndim  = shape.size(); 
 	_numel = 1; 
@@ -19,13 +21,13 @@ void bz::tensor::compute_strides(){
 	}
 }
 
-bz::tensor::tensor(std::vector<int> shape, std::initializer_list<float> values) : tensor(shape){
+bz::tensor::tensor(bz::vi32 shape, std::initializer_list<float> values) : tensor(shape){
 	assert(values.size() == _numel);
 	std::copy(values.begin(), values.end(), _data.begin());
 }
 
 
-float bz::tensor::at(std::vector<int> idxs) const {
+float bz::tensor::at(bz::vi32 idxs) const {
 	assert(idxs.size() == _numel);
 	int offset = 0;
 	for(int i = 0; i < _ndim; i++){
@@ -35,7 +37,7 @@ float bz::tensor::at(std::vector<int> idxs) const {
 	return _data[offset];
 }
 
-float& bz::tensor::at(std::vector<int> idxs){
+float& bz::tensor::at(bz::vi32 idxs){
 	assert(idxs.size() == _numel);
 	int offset = 0;
 	for(int i = 0; i < _ndim; i++){
@@ -77,18 +79,18 @@ std::ostream& bz::operator<<(std::ostream& os, const bz::tensor& t){
 
 
 void bz::tensor::fill(float value){
-	for(size_t i = 0; i < _numel; i++)
+	for(bz::u64 i = 0; i < _numel; i++)
 		_data[i] = value;
 }
 
 //
-bz::tensor bz::tensor::ones(std::vector<int> shape){
+bz::tensor bz::tensor::ones(bz::vi32 shape){
 	tensor t(shape);
 	t.fill(1.0f);
 	return t;
 }
 
-bz::tensor bz::tensor::zeros(std::vector<int> shape){
+bz::tensor bz::tensor::zeros(bz::vi32 shape){
 	tensor t(shape);
 	return t;
 }
@@ -97,7 +99,7 @@ bz::tensor bz::tensor::zeros(std::vector<int> shape){
 bz::tensor bz::tensor::operator+(const tensor& other) const {
 	assert(_shape == other._shape);
 	tensor out(_shape);
-	for(size_t i = 0; i < _numel; i++)
+	for(bz::u64 i = 0; i < _numel; i++)
 		out._data[i] = _data[i] + other._data[i];
 	return out;
 }
@@ -105,7 +107,7 @@ bz::tensor bz::tensor::operator+(const tensor& other) const {
 bz::tensor bz::tensor::operator-(const bz::tensor& other) const {
 	assert(_shape == other._shape);
 	bz::tensor out(_shape);
-	for(size_t i = 0; i < _numel; i++)
+	for(bz::u64 i = 0; i < _numel; i++)
 		out._data[i] = _data[i] - other._data[i];
 	return out;
 }
@@ -113,38 +115,112 @@ bz::tensor bz::tensor::operator-(const bz::tensor& other) const {
 bz::tensor bz::tensor::operator*(const tensor& other) const {
 	assert(_shape == other._shape);
 	tensor out(_shape);
-	for(size_t i = 0; i < _numel; i++)
+	for(bz::u64 i = 0; i < _numel; i++)
 		out._data[i] = _data[i] * other._data[i];
 	return out;
 }
 
 bz::tensor bz::tensor::operator*(float scalar) const {
 	bz::tensor out(_shape);
-	for(size_t i = 0; i < _numel; i++)
+	for(bz::u64 i = 0; i < _numel; i++)
 		out._data[i] = _data[i] * scalar;
 	return out;
 }
 
 bz::tensor bz::tensor::operator/(float scalar) const {
 	bz::tensor out(_shape);
-	for(size_t i = 0; i < _numel; i++)
+	for(bz::u64 i = 0; i < _numel; i++)
 		out._data[i] = _data[i] / scalar;
 	return out;
 }
 
+bz::tensor bz::tensor::rand_uniform(vi32 shape, f32 low, f32 high){
+	bz::tensor out(shape);
+	static std::random_device rd; 
+	static std::mt19937 engine(rd());
+	std::uniform_real_distribution<bz::f32> dist(low, high);
+	std::generate(out._data.begin(), out._data.end(), [&](){
+			return dist(engine);
+	});
+	return out;
+}
 
-// bz::tensor bz::tensor::mean(int axis) const{
-// 	assert(axis < _ndim);
-// 	bz::vint out_shape;
-// 	for(int i = 0; i < _ndim; i++){
-// 		if(i == axis)	continue;
-// 		out_shape.push_back(_shape[i]);
-// 	}
-// 	bz::tensor out(out_shape);
-// 	return out;
-// }
-// tensor tensor::std (int dim) const{}
-// tensor tensor::max (int dim) const{}
-// tensor tensor::min (int dim) const{}
-// tensor tensor::sum (int dim) const{}
+bz::tensor bz::tensor::rand_normal(vi32 shape, f32 mean, f32 std){
+	bz::tensor out(shape);
+	static std::random_device rd; 
+	static std::mt19937 engine(rd());
+	std::normal_distribution<bz::f32> dist(mean, std);
+	std::generate(out._data.begin(), out._data.end(), [&](){
+			return dist(engine);
+	});
+	return out;
+}
 
+bz::tensor bz::tensor::randn(vi32 shape){
+	return bz::tensor::rand_normal(shape, 0, 1);
+}
+
+bz::tensor bz::tensor::log(){
+	bz::tensor out(this->_shape);
+	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](bz::f32 x){
+			return std::log(x);
+	});
+	return out;
+}
+
+bz::tensor bz::tensor::exp(){
+	bz::tensor out(this->_shape);
+	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](bz::f32 x){
+			return std::exp(x);
+	});
+	return out;
+}
+
+bz::tensor bz::tensor::sin(){
+	bz::tensor out(this->_shape);
+	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](bz::f32 x){
+			return std::sin(x);
+	});
+	return out;
+}
+
+bz::tensor bz::tensor::cos(){
+	bz::tensor out(this->_shape);
+	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](bz::f32 x){
+			return std::cos(x);
+	});
+	return out;
+}
+
+bz::tensor bz::tensor::tanh(){
+	bz::tensor out(this->_shape);
+	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](bz::f32 x){
+			return std::tanh(x);
+	});
+	return out;
+}
+
+void bz::tensor::log_(){
+	for(u64 i = 0; i < this->_numel; i++)
+		this->_data[i] = std::log(this->_data[i]);
+}
+
+void bz::tensor::exp_(){
+	for(u64 i = 0; i < this->_numel; i++)
+		this->_data[i] = std::exp(this->_data[i]);
+}
+
+void bz::tensor::sin_(){
+	for(u64 i = 0; i < this->_numel; i++)
+		this->_data[i] = std::sin(this->_data[i]);
+}
+
+void bz::tensor::cos_(){
+	for(u64 i = 0; i < this->_numel; i++)
+		this->_data[i] = std::cos(this->_data[i]);
+}
+
+void bz::tensor::tanh_(){
+	for(u64 i = 0; i < this->_numel; i++)
+		this->_data[i] = std::tanh(this->_data[i]);
+}

@@ -160,7 +160,15 @@ bz::tensor bz::tensor::randn(vi32 shape){
 	return bz::tensor::rand_normal(shape, 0, 1);
 }
 
-bz::tensor bz::tensor::log(){
+bz::tensor bz::tensor::rand_he(bz::vi32 shape, bz::f32 fan_in){
+	return bz::tensor::rand_normal(shape, 0, (2.0/fan_in));
+}
+
+bz::tensor bz::tensor::rand_xavier(bz::vi32 shape, bz::f32 fan_in, bz::f32 fan_out){
+	return bz::tensor::rand_normal(shape, 0, (2.0 / (fan_in + fan_out)));
+}
+
+bz::tensor bz::tensor::log() const {
 	bz::tensor out(this->_shape);
 	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](bz::f32 x){
 			return std::log(x);
@@ -168,7 +176,7 @@ bz::tensor bz::tensor::log(){
 	return out;
 }
 
-bz::tensor bz::tensor::exp(){
+bz::tensor bz::tensor::exp() const {
 	bz::tensor out(this->_shape);
 	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](bz::f32 x){
 			return std::exp(x);
@@ -176,7 +184,7 @@ bz::tensor bz::tensor::exp(){
 	return out;
 }
 
-bz::tensor bz::tensor::sin(){
+bz::tensor bz::tensor::sin() const {
 	bz::tensor out(this->_shape);
 	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](bz::f32 x){
 			return std::sin(x);
@@ -184,7 +192,7 @@ bz::tensor bz::tensor::sin(){
 	return out;
 }
 
-bz::tensor bz::tensor::cos(){
+bz::tensor bz::tensor::cos() const {
 	bz::tensor out(this->_shape);
 	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](bz::f32 x){
 			return std::cos(x);
@@ -192,7 +200,7 @@ bz::tensor bz::tensor::cos(){
 	return out;
 }
 
-bz::tensor bz::tensor::tanh(){
+bz::tensor bz::tensor::tanh() const {
 	bz::tensor out(this->_shape);
 	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](bz::f32 x){
 			return std::tanh(x);
@@ -224,3 +232,13 @@ void bz::tensor::tanh_(){
 	for(u64 i = 0; i < this->_numel; i++)
 		this->_data[i] = std::tanh(this->_data[i]);
 }
+
+
+
+
+
+
+
+
+
+

@@ -23,10 +23,10 @@ I've tried to keep the dependencies minimal, but BLAS/LAPACK were used to make t
 
 ##  Roadmap
 1.  `bz::tensor` foundation + linear algebra
--   Tensor class
--   Factory methods + Random initialization 
+-   ~Tensor class~
+-   ~Factory methods + Random initialization~
 -   Reductions 
--   Arithmetic; operator overloading
+-   ~Arithmetic; operator overloading~
 -   matmul (BLAS)
 -   softmax 
 -   layer_norm 

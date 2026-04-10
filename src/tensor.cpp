@@ -5,9 +5,10 @@
 #include <random> 
 #include <cmath>
 #include <openblas/cblas.h> 
-// #include "bz_rand.hpp"
 
-bz::tensor::tensor(bz::vi32 shape){
+namespace bz{
+
+tensor::tensor(vi32 shape){
 	_shape = shape;
 	_ndim  = shape.size(); 
 	_numel = 1; 
@@ -17,19 +18,19 @@ bz::tensor::tensor(bz::vi32 shape){
 	_data.resize(_numel, 0.0f);
 }
 
-void bz::tensor::compute_strides(){
+void tensor::compute_strides(){
 	for(int i = _ndim - 2; i >= 0; i--){
 		_strides[i] = _strides[i + 1] * _shape[i + 1];
 	}
 }
 
-bz::tensor::tensor(bz::vi32 shape, std::initializer_list<float> values) : tensor(shape){
+tensor::tensor(vi32 shape, std::initializer_list<float> values) : tensor(shape){
 	assert(values.size() == _numel);
 	std::copy(values.begin(), values.end(), _data.begin());
 }
 
 
-float bz::tensor::at(bz::vi32 idxs) const {
+float tensor::at(vi32 idxs) const {
 	assert(idxs.size() == _numel);
 	int offset = 0;
 	for(int i = 0; i < _ndim; i++){
@@ -39,7 +40,7 @@ float bz::tensor::at(bz::vi32 idxs) const {
 	return _data[offset];
 }
 
-float& bz::tensor::at(bz::vi32 idxs){
+float& tensor::at(vi32 idxs){
 	assert(idxs.size() == _numel);
 	int offset = 0;
 	for(int i = 0; i < _ndim; i++){
@@ -50,7 +51,7 @@ float& bz::tensor::at(bz::vi32 idxs){
 }
 
 
-static inline void print_tensor_recursive(std::ostream& os, const bz::tensor& t, int dim, int offset, int depth){
+static inline void print_tensor_recursive(std::ostream& os, const tensor& t, int dim, int offset, int depth){
 	if(dim == t.ndim() - 1){
 		os << "[";
 		for(int i = 0; i < t.shape()[dim]; i++){
@@ -73,218 +74,218 @@ static inline void print_tensor_recursive(std::ostream& os, const bz::tensor& t,
 	}
 }
 
-std::ostream& bz::operator<<(std::ostream& os, const bz::tensor& t){
+std::ostream& operator<<(std::ostream& os, const tensor& t){
 	print_tensor_recursive(os, t, 0, 0, 0);
 	os << "\n";
 	return os;
 }
 
 
-void bz::tensor::fill(float value){
-	for(bz::u64 i = 0; i < _numel; i++)
+void tensor::fill(float value){
+	for(u64 i = 0; i < _numel; i++)
 		_data[i] = value;
 }
 
 //
-bz::tensor bz::tensor::ones(bz::vi32 shape){
+tensor tensor::ones(vi32 shape){
 	tensor t(shape);
 	t.fill(1.0f);
 	return t;
 }
 
-bz::tensor bz::tensor::zeros(bz::vi32 shape){
+tensor tensor::zeros(vi32 shape){
 	tensor t(shape);
 	return t;
 }
 
 
-bz::tensor bz::tensor::operator+(const tensor& other) const {
+tensor tensor::operator+(const tensor& other) const {
 	assert(_shape == other._shape);
 	tensor out(_shape);
-	for(bz::u64 i = 0; i < _numel; i++)
+	for(u64 i = 0; i < _numel; i++)
 		out._data[i] = _data[i] + other._data[i];
 	return out;
 }
 
-bz::tensor bz::tensor::operator+(bz::f32 scalar) const{
+tensor tensor::operator+(f32 scalar) const{
 	tensor out(_shape);
-	for(bz::u64 i = 0; i < _numel; i++)
+	for(u64 i = 0; i < _numel; i++)
 		out._data[i] = _data[i] + scalar;
 	return out;
 }
 
-bz::tensor bz::tensor::operator-(bz::f32 scalar) const{
+tensor tensor::operator-(f32 scalar) const{
 	tensor out(_shape);
-	for(bz::u64 i = 0; i < _numel; i++)
+	for(u64 i = 0; i < _numel; i++)
 		out._data[i] = _data[i] - scalar;
 	return out;
 }
 
-bz::tensor bz::tensor::pow(const u32 exponent) const{
-	bz::tensor out(this->_shape);
-	for(bz::u64 i = 0; i < _numel; i++)
+tensor tensor::pow(const u32 exponent) const{
+	tensor out(this->_shape);
+	for(u64 i = 0; i < _numel; i++)
 		out._data[i] = std::pow(this->_data[i], exponent);
 	return out;
 } 
 
-void bz::tensor::pow_(const u32 exponent) {
-	for(bz::u64 i = 0; i < _numel; i++)
+void tensor::pow_(const u32 exponent) {
+	for(u64 i = 0; i < _numel; i++)
 		this->_data[i] = std::pow(this->_data[i], exponent);
 } 
 
 
 
-bz::tensor bz::tensor::operator-(const bz::tensor& other) const {
+tensor tensor::operator-(const tensor& other) const {
 	assert(_shape == other._shape);
-	bz::tensor out(_shape);
-	for(bz::u64 i = 0; i < _numel; i++)
+	tensor out(_shape);
+	for(u64 i = 0; i < _numel; i++)
 		out._data[i] = _data[i] - other._data[i];
 	return out;
 }
 
-bz::tensor bz::tensor::operator*(const tensor& other) const {
+tensor tensor::operator*(const tensor& other) const {
 	assert(_shape == other._shape);
 	tensor out(_shape);
-	for(bz::u64 i = 0; i < _numel; i++)
+	for(u64 i = 0; i < _numel; i++)
 		out._data[i] = _data[i] * other._data[i];
 	return out;
 }
 
-bz::tensor bz::tensor::operator*(float scalar) const {
-	bz::tensor out(_shape);
-	for(bz::u64 i = 0; i < _numel; i++)
+tensor tensor::operator*(float scalar) const {
+	tensor out(_shape);
+	for(u64 i = 0; i < _numel; i++)
 		out._data[i] = _data[i] * scalar;
 	return out;
 }
 
-bz::tensor bz::tensor::operator/(float scalar) const {
-	bz::tensor out(_shape);
-	for(bz::u64 i = 0; i < _numel; i++)
+tensor tensor::operator/(float scalar) const {
+	tensor out(_shape);
+	for(u64 i = 0; i < _numel; i++)
 		out._data[i] = _data[i] / scalar;
 	return out;
 }
 
-bz::tensor bz::tensor::rand_uniform(vi32 shape, f32 low, f32 high){
-	bz::tensor out(shape);
+tensor tensor::rand_uniform(vi32 shape, f32 low, f32 high){
+	tensor out(shape);
 	static std::random_device rd; 
 	static std::mt19937 engine(rd());
-	std::uniform_real_distribution<bz::f32> dist(low, high);
+	std::uniform_real_distribution<f32> dist(low, high);
 	std::generate(out._data.begin(), out._data.end(), [&](){
 			return dist(engine);
 	});
 	return out;
 }
 
-bz::tensor bz::tensor::rand_normal(vi32 shape, f32 mean, f32 std){
-	bz::tensor out(shape);
+tensor tensor::rand_normal(vi32 shape, f32 mean, f32 std){
+	tensor out(shape);
 	static std::random_device rd; 
 	static std::mt19937 engine(rd());
-	std::normal_distribution<bz::f32> dist(mean, std);
+	std::normal_distribution<f32> dist(mean, std);
 	std::generate(out._data.begin(), out._data.end(), [&](){
 			return dist(engine);
 	});
 	return out;
 }
 
-bz::tensor bz::tensor::randn(vi32 shape){
-	return bz::tensor::rand_normal(shape, 0, 1);
+tensor tensor::randn(vi32 shape){
+	return tensor::rand_normal(shape, 0, 1);
 }
 
-bz::tensor bz::tensor::rand_he(bz::vi32 shape, bz::f32 fan_in){
-	return bz::tensor::rand_normal(shape, 0, (2.0/fan_in));
+tensor tensor::rand_he(vi32 shape, f32 fan_in){
+	return tensor::rand_normal(shape, 0, (2.0/fan_in));
 }
 
-bz::tensor bz::tensor::rand_xavier(bz::vi32 shape, bz::f32 fan_in, bz::f32 fan_out){
-	return bz::tensor::rand_normal(shape, 0, (2.0 / (fan_in + fan_out)));
+tensor tensor::rand_xavier(vi32 shape, f32 fan_in, f32 fan_out){
+	return tensor::rand_normal(shape, 0, (2.0 / (fan_in + fan_out)));
 }
 
-bz::tensor bz::tensor::log() const {
-	bz::tensor out(this->_shape);
-	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](bz::f32 x){
+tensor tensor::log() const {
+	tensor out(this->_shape);
+	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](f32 x){
 			return std::log(x);
 	});
 	return out;
 }
 
-bz::tensor bz::tensor::exp() const {
-	bz::tensor out(this->_shape);
-	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](bz::f32 x){
+tensor tensor::exp() const {
+	tensor out(this->_shape);
+	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](f32 x){
 			return std::exp(x);
 	});
 	return out;
 }
 
-bz::tensor bz::tensor::sin() const {
-	bz::tensor out(this->_shape);
-	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](bz::f32 x){
+tensor tensor::sin() const {
+	tensor out(this->_shape);
+	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](f32 x){
 			return std::sin(x);
 	});
 	return out;
 }
 
-bz::tensor bz::tensor::cos() const {
-	bz::tensor out(this->_shape);
-	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](bz::f32 x){
+tensor tensor::cos() const {
+	tensor out(this->_shape);
+	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](f32 x){
 			return std::cos(x);
 	});
 	return out;
 }
 
-bz::tensor bz::tensor::tanh() const {
-	bz::tensor out(this->_shape);
-	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](bz::f32 x){
+tensor tensor::tanh() const {
+	tensor out(this->_shape);
+	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](f32 x){
 			return std::tanh(x);
 	});
 	return out;
 }
 
-void bz::tensor::log_(){
+void tensor::log_(){
 	for(u64 i = 0; i < this->_numel; i++)
 		this->_data[i] = std::log(this->_data[i]);
 }
 
-void bz::tensor::exp_(){
+void tensor::exp_(){
 	for(u64 i = 0; i < this->_numel; i++)
 		this->_data[i] = std::exp(this->_data[i]);
 }
 
-void bz::tensor::sin_(){
+void tensor::sin_(){
 	for(u64 i = 0; i < this->_numel; i++)
 		this->_data[i] = std::sin(this->_data[i]);
 }
 
-void bz::tensor::cos_(){
+void tensor::cos_(){
 	for(u64 i = 0; i < this->_numel; i++)
 		this->_data[i] = std::cos(this->_data[i]);
 }
 
-void bz::tensor::tanh_(){
+void tensor::tanh_(){
 	for(u64 i = 0; i < this->_numel; i++)
 		this->_data[i] = std::tanh(this->_data[i]);
 }
 
-bz::tensor bz::tensor::max (u32 axis) const {
-	bz::vi32 outshape;
+tensor tensor::max (u32 axis) const {
+	vi32 outshape;
 	//	calculating the shape of the output; ignoring the reduced dim
-	for(bz::i32 i = 0; i < this->_ndim; i++){
-		if(i != (bz::i32)axis)
+	for(i32 i = 0; i < this->_ndim; i++){
+		if(i != (i32)axis)
 			outshape.push_back(this->_shape[i]); 
 	}
-	bz::tensor out(outshape);
-	out.fill((bz::f32)(-FLT_MAX));
+	tensor out(outshape);
+	out.fill((f32)(-FLT_MAX));
 
-	bz::vi32 coords(_ndim);
-	for(bz::u64 i = 0; i < this->_numel; i++){
+	vi32 coords(_ndim);
+	for(u64 i = 0; i < this->_numel; i++){
 		//	finding which element in the flat array belongs to which dimension
-		bz::u64 temp_idx = i; 
-		for(bz::i32 j = 0; j < this->_ndim; j++){
+		u64 temp_idx = i; 
+		for(i32 j = 0; j < this->_ndim; j++){
 			coords[j] = temp_idx / this->_strides[j];
 			temp_idx  = temp_idx % _strides[j];
 		}
-		bz::u64 out_idx  = 0; 
-		bz::i32 out_dim_counter = 0; 
-		for(bz::i32 j = 0; j < this->_ndim; j++){
-			if(j == (bz::i32)axis)	continue;
+		u64 out_idx  = 0; 
+		i32 out_dim_counter = 0; 
+		for(i32 j = 0; j < this->_ndim; j++){
+			if(j == (i32)axis)	continue;
 			out_idx += coords[j] * out._strides[out_dim_counter];
 			out_dim_counter++;
 		}
@@ -294,28 +295,28 @@ bz::tensor bz::tensor::max (u32 axis) const {
 	return out;
 }
 
-bz::tensor bz::tensor::min (bz::u32 axis) const {
-	bz::vi32 outshape;
+tensor tensor::min (u32 axis) const {
+	vi32 outshape;
 	//	calculating the shape of the output; ignoring the reduced dim
-	for(bz::i32 i = 0; i < this->_ndim; i++){
-		if(i != (bz::i32)axis)
+	for(i32 i = 0; i < this->_ndim; i++){
+		if(i != (i32)axis)
 			outshape.push_back(this->_shape[i]); 
 	}
-	bz::tensor out(outshape);
-	out.fill((bz::f32)(FLT_MAX));
+	tensor out(outshape);
+	out.fill((f32)(FLT_MAX));
 
-	bz::vi32 coords(_ndim);
-	for(bz::u64 i = 0; i < this->_numel; i++){
+	vi32 coords(_ndim);
+	for(u64 i = 0; i < this->_numel; i++){
 		//	finding which element in the flat array belongs to which dimension
-		bz::u64 temp_idx = i; 
-		for(bz::i32 j = 0; j < this->_ndim; j++){
+		u64 temp_idx = i; 
+		for(i32 j = 0; j < this->_ndim; j++){
 			coords[j] = temp_idx / this->_strides[j];
 			temp_idx  = temp_idx % _strides[j];
 		}
-		bz::u64 out_idx  = 0; 
-		bz::i32 out_dim_counter = 0; 
-		for(bz::i32 j = 0; j < this->_ndim; j++){
-			if(j == (bz::i32)axis)	continue;
+		u64 out_idx  = 0; 
+		i32 out_dim_counter = 0; 
+		for(i32 j = 0; j < this->_ndim; j++){
+			if(j == (i32)axis)	continue;
 			out_idx += coords[j] * out._strides[out_dim_counter];
 			out_dim_counter++;
 		}
@@ -325,26 +326,26 @@ bz::tensor bz::tensor::min (bz::u32 axis) const {
 	return out;
 }
 
-bz::tensor bz::tensor::sum (bz::u32 axis) const {
-	bz::vi32 outshape;
+tensor tensor::sum (u32 axis) const {
+	vi32 outshape;
 	//	calculating the shape of the output; ignoring the reduced dim
-	for(bz::i32 i = 0; i < this->_ndim; i++){
-		if(i != (bz::i32)axis)
+	for(i32 i = 0; i < this->_ndim; i++){
+		if(i != (i32)axis)
 			outshape.push_back(this->_shape[i]); 
 	}
-	bz::tensor out(outshape);
-	bz::vi32 coords(_ndim);
-	for(bz::u64 i = 0; i < this->_numel; i++){
+	tensor out(outshape);
+	vi32 coords(_ndim);
+	for(u64 i = 0; i < this->_numel; i++){
 		//	finding which element in the flat array belongs to which dimension
-		bz::u64 temp_idx = i; 
-		for(bz::i32 j = 0; j < this->_ndim; j++){
+		u64 temp_idx = i; 
+		for(i32 j = 0; j < this->_ndim; j++){
 			coords[j] = temp_idx / this->_strides[j];
 			temp_idx  = temp_idx % _strides[j];
 		}
-		bz::u64 out_idx  = 0; 
-		bz::i32 out_dim_counter = 0; 
-		for(bz::i32 j = 0; j < this->_ndim; j++){
-			if(j == (bz::i32)axis)	continue;
+		u64 out_idx  = 0; 
+		i32 out_dim_counter = 0; 
+		for(i32 j = 0; j < this->_ndim; j++){
+			if(j == (i32)axis)	continue;
 			out_idx += coords[j] * out._strides[out_dim_counter];
 			out_dim_counter++;
 		}
@@ -353,15 +354,74 @@ bz::tensor bz::tensor::sum (bz::u32 axis) const {
 	return out;
 }
 
-bz::tensor bz::tensor::mean (bz::u32 axis) const {
-	bz::tensor out = this->sum(axis);
-	bz::f32 divisor = (bz::f32)this->_shape[axis];
+tensor tensor::mean (u32 axis) const {
+	tensor out = this->sum(axis);
+	f32 divisor = (f32)this->_shape[axis];
 	return out / divisor;
 }
 
+tensor tensor::matmul(const tensor& other) const{
+	assert((this->_ndim == 2) && (other._ndim == 2));
+	assert(this->_shape[1] == other._shape[0]);
+	i32 M = this->_shape[0];		// this->rows
+	i32 N = other._shape[1];		// other col
+	i32 K = this->_shape[1];		// this->cols
+	tensor out({M, N});
+	cblas_sgemm(
+		CblasRowMajor, CblasNoTrans, CblasNoTrans, 
+		M, N, K, 
+		1.0f, 
+		this->_data.data(), K, 
+		other._data.data(), N,
+		0.0f, 
+		out._data.data(), N
+	);
+	return out;
+}
+
+tensor tensor::matmul(const tensor& inp1, const tensor& inp2){
+	assert((inp1._ndim == 2) && (inp2._ndim == 2));
+	assert(inp1._shape[1] == inp2._shape[0]);
+	i32 M = inp1._shape[0];		// inp1 rows
+	i32 N = inp2._shape[1];		// inp2 col
+	i32 K = inp1._shape[1];		// inp1 cols
+	tensor out({M, N});
+	cblas_sgemm(
+		CblasRowMajor, CblasNoTrans, CblasNoTrans, 
+		M, N, K, 
+		1.0f, 
+		inp1._data.data(), K, 
+		inp2._data.data(), N,
+		0.0f, 
+		out._data.data(), N
+	);
+	return out;
+}
+
+tensor tensor::mat_vec_mul(const tensor& inp1, const tensor& inp2){
+	assert(inp1._ndim == 2);
+	assert(inp2._ndim == 1);
+	assert(inp1._shape[1] == inp2._shape[0]);
+	i32 M = inp1._shape[0];
+	i32 N = inp1._shape[1];
+	tensor out({M});
+	cblas_sgemv(
+		CblasRowMajor, CblasNoTrans, 
+		M, N, 
+		1.0f, 
+		inp1._data.data(), N, 
+		inp2._data.data(), 1,
+		0.0f, 
+		out._data.data(),
+		1
+	);
+	return out;
+
+}
+// tensor vec_mat_mul(const tensor& inp1, const tensor& inp2);
+// tensor dot(const tensor& inp1, const tensor& inp2);
 
 
 
 
-
-
+}

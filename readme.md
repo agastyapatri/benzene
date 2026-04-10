@@ -25,9 +25,9 @@ I've tried to keep the dependencies minimal, but BLAS/LAPACK were used to make t
 1.  `bz::tensor` foundation + linear algebra
 -   ~Tensor class~
 -   ~Factory methods + Random initialization~
--   Reductions 
+-   ~Reductions~ 
 -   ~Arithmetic; operator overloading~
--   matmul (BLAS)
+-   ~matmul (BLAS)~ 
 -   softmax 
 -   layer_norm 
 -   rmsnorm 

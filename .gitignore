@@ -3,4 +3,6 @@ main
 *.o 
 *.out
 bin/
-
+Makefile.bak
+cmake/
+.cmake/

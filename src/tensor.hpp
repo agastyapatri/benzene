@@ -33,6 +33,7 @@ class tensor{
 public: 
 	tensor(vi32 shape); 
 	tensor(vi32 shape, std::initializer_list<float> values); 
+	tensor() = default;
 
 	//	accessors 
 	f32 at(vi32 idxs) const;
@@ -80,21 +81,28 @@ public:
 	void tanh_();
 
 
-	//	 TODO >:(
 	//	reductions
 	tensor mean(u32 axis) const;
 	tensor std (u32 axis) const;
 	tensor max (u32 axis) const;
 	tensor min (u32 axis) const;
 	tensor sum (u32 axis) const;
+	tensor matmul(const tensor& other) const;
 
 	//	math on tensors for llm purposes
-	static tensor matmul(const tensor& inp1, const tensor& inp2);
-	tensor matmul(const tensor& other) const;
+
 	tensor softmax(i32 dim) const;
 	tensor layer_norm(const tensor& weight, const tensor& bias) const;
 	tensor rmsnorm() const;
 
+	static tensor matmul(const tensor& inp1, const tensor& inp2);
+	static tensor mat_vec_mul(const tensor& inp1, const tensor& inp2);
+	static tensor vec_mat_mul(const tensor& inp1, const tensor& inp2);
+	static tensor dot(const tensor& inp1, const tensor& inp2);
+
 };
+
+
+
 
 }

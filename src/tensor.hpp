@@ -49,6 +49,10 @@ public:
 	tensor operator*(const tensor& other) const;
 	tensor operator*(f32 scalar) const;
 	tensor operator/(f32 scalar) const;
+	tensor operator+(f32 scalar) const;
+	tensor operator-(f32 scalar) const;
+	tensor pow(const u32 exponent) const; 
+	void   pow_(const u32 exponent);
 	friend std::ostream& operator<<(std::ostream& os, const tensor& t);
 
 	// factory

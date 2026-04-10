@@ -106,6 +106,34 @@ bz::tensor bz::tensor::operator+(const tensor& other) const {
 	return out;
 }
 
+bz::tensor bz::tensor::operator+(bz::f32 scalar) const{
+	tensor out(_shape);
+	for(bz::u64 i = 0; i < _numel; i++)
+		out._data[i] = _data[i] + scalar;
+	return out;
+}
+
+bz::tensor bz::tensor::operator-(bz::f32 scalar) const{
+	tensor out(_shape);
+	for(bz::u64 i = 0; i < _numel; i++)
+		out._data[i] = _data[i] - scalar;
+	return out;
+}
+
+bz::tensor bz::tensor::pow(const u32 exponent) const{
+	bz::tensor out(this->_shape);
+	for(bz::u64 i = 0; i < _numel; i++)
+		out._data[i] = std::pow(this->_data[i], exponent);
+	return out;
+} 
+
+void bz::tensor::pow_(const u32 exponent) {
+	for(bz::u64 i = 0; i < _numel; i++)
+		this->_data[i] = std::pow(this->_data[i], exponent);
+} 
+
+
+
 bz::tensor bz::tensor::operator-(const bz::tensor& other) const {
 	assert(_shape == other._shape);
 	bz::tensor out(_shape);
@@ -245,9 +273,9 @@ bz::tensor bz::tensor::max (u32 axis) const {
 	bz::tensor out(outshape);
 	out.fill((bz::f32)(-FLT_MAX));
 
+	bz::vi32 coords(_ndim);
 	for(bz::u64 i = 0; i < this->_numel; i++){
 		//	finding which element in the flat array belongs to which dimension
-		bz::vi32 coords(_ndim);
 		bz::u64 temp_idx = i; 
 		for(bz::i32 j = 0; j < this->_ndim; j++){
 			coords[j] = temp_idx / this->_strides[j];
@@ -266,7 +294,7 @@ bz::tensor bz::tensor::max (u32 axis) const {
 	return out;
 }
 
-bz::tensor bz::tensor::min (u32 axis) const {
+bz::tensor bz::tensor::min (bz::u32 axis) const {
 	bz::vi32 outshape;
 	//	calculating the shape of the output; ignoring the reduced dim
 	for(bz::i32 i = 0; i < this->_ndim; i++){
@@ -276,9 +304,9 @@ bz::tensor bz::tensor::min (u32 axis) const {
 	bz::tensor out(outshape);
 	out.fill((bz::f32)(FLT_MAX));
 
+	bz::vi32 coords(_ndim);
 	for(bz::u64 i = 0; i < this->_numel; i++){
 		//	finding which element in the flat array belongs to which dimension
-		bz::vi32 coords(_ndim);
 		bz::u64 temp_idx = i; 
 		for(bz::i32 j = 0; j < this->_ndim; j++){
 			coords[j] = temp_idx / this->_strides[j];
@@ -297,7 +325,7 @@ bz::tensor bz::tensor::min (u32 axis) const {
 	return out;
 }
 
-bz::tensor bz::tensor::sum (u32 axis) const {
+bz::tensor bz::tensor::sum (bz::u32 axis) const {
 	bz::vi32 outshape;
 	//	calculating the shape of the output; ignoring the reduced dim
 	for(bz::i32 i = 0; i < this->_ndim; i++){
@@ -305,9 +333,9 @@ bz::tensor bz::tensor::sum (u32 axis) const {
 			outshape.push_back(this->_shape[i]); 
 	}
 	bz::tensor out(outshape);
+	bz::vi32 coords(_ndim);
 	for(bz::u64 i = 0; i < this->_numel; i++){
 		//	finding which element in the flat array belongs to which dimension
-		bz::vi32 coords(_ndim);
 		bz::u64 temp_idx = i; 
 		for(bz::i32 j = 0; j < this->_ndim; j++){
 			coords[j] = temp_idx / this->_strides[j];
@@ -325,17 +353,11 @@ bz::tensor bz::tensor::sum (u32 axis) const {
 	return out;
 }
 
-bz::tensor bz::tensor::mean (u32 axis) const {
+bz::tensor bz::tensor::mean (bz::u32 axis) const {
 	bz::tensor out = this->sum(axis);
 	bz::f32 divisor = (bz::f32)this->_shape[axis];
 	return out / divisor;
 }
-
-
-// bz::tensor bz::tensor::sum (i32 axis) const;
-// bz::tensor bz::tensor::min (i32 axis) const;
-// bz::tensor bz::tensor::mean(i32 axis) const;
-// bz::tensor bz::tensor::std (i32 axis) const;
 
 
 

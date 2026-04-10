@@ -1,7 +1,11 @@
 #include "tensor.hpp"
 #include <numbers> 
 int main(){
-	bz::tensor t = bz::tensor::zeros({2,3,4});
-	t.fill(90 * (std::numbers::pi / 180));
-	std::cout << t.cos() << std::endl;
+	bz::tensor t = bz::tensor::randn({2,3,4});
+	bz::tensor out = t.min(0);
+	std::cout << t << std::endl;
+	std::cout << "\n";
+	std::cout << out << std::endl;
+
+
 }

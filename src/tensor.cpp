@@ -1,8 +1,10 @@
 #include "tensor.hpp"
 #include <algorithm>
 #include <cassert>
+#include <cfloat>
 #include <random> 
 #include <cmath>
+#include <openblas/cblas.h> 
 // #include "bz_rand.hpp"
 
 bz::tensor::tensor(bz::vi32 shape){
@@ -233,8 +235,107 @@ void bz::tensor::tanh_(){
 		this->_data[i] = std::tanh(this->_data[i]);
 }
 
+bz::tensor bz::tensor::max (u32 axis) const {
+	bz::vi32 outshape;
+	//	calculating the shape of the output; ignoring the reduced dim
+	for(bz::i32 i = 0; i < this->_ndim; i++){
+		if(i != (bz::i32)axis)
+			outshape.push_back(this->_shape[i]); 
+	}
+	bz::tensor out(outshape);
+	out.fill((bz::f32)(-FLT_MAX));
+
+	for(bz::u64 i = 0; i < this->_numel; i++){
+		//	finding which element in the flat array belongs to which dimension
+		bz::vi32 coords(_ndim);
+		bz::u64 temp_idx = i; 
+		for(bz::i32 j = 0; j < this->_ndim; j++){
+			coords[j] = temp_idx / this->_strides[j];
+			temp_idx  = temp_idx % _strides[j];
+		}
+		bz::u64 out_idx  = 0; 
+		bz::i32 out_dim_counter = 0; 
+		for(bz::i32 j = 0; j < this->_ndim; j++){
+			if(j == (bz::i32)axis)	continue;
+			out_idx += coords[j] * out._strides[out_dim_counter];
+			out_dim_counter++;
+		}
+		if(out._data[out_idx] <= this->_data[i])
+			out._data[out_idx] = this->_data[i];
+	}
+	return out;
+}
+
+bz::tensor bz::tensor::min (u32 axis) const {
+	bz::vi32 outshape;
+	//	calculating the shape of the output; ignoring the reduced dim
+	for(bz::i32 i = 0; i < this->_ndim; i++){
+		if(i != (bz::i32)axis)
+			outshape.push_back(this->_shape[i]); 
+	}
+	bz::tensor out(outshape);
+	out.fill((bz::f32)(FLT_MAX));
+
+	for(bz::u64 i = 0; i < this->_numel; i++){
+		//	finding which element in the flat array belongs to which dimension
+		bz::vi32 coords(_ndim);
+		bz::u64 temp_idx = i; 
+		for(bz::i32 j = 0; j < this->_ndim; j++){
+			coords[j] = temp_idx / this->_strides[j];
+			temp_idx  = temp_idx % _strides[j];
+		}
+		bz::u64 out_idx  = 0; 
+		bz::i32 out_dim_counter = 0; 
+		for(bz::i32 j = 0; j < this->_ndim; j++){
+			if(j == (bz::i32)axis)	continue;
+			out_idx += coords[j] * out._strides[out_dim_counter];
+			out_dim_counter++;
+		}
+		if(out._data[out_idx] >= this->_data[i])
+			out._data[out_idx] = this->_data[i];
+	}
+	return out;
+}
+
+bz::tensor bz::tensor::sum (u32 axis) const {
+	bz::vi32 outshape;
+	//	calculating the shape of the output; ignoring the reduced dim
+	for(bz::i32 i = 0; i < this->_ndim; i++){
+		if(i != (bz::i32)axis)
+			outshape.push_back(this->_shape[i]); 
+	}
+	bz::tensor out(outshape);
+	for(bz::u64 i = 0; i < this->_numel; i++){
+		//	finding which element in the flat array belongs to which dimension
+		bz::vi32 coords(_ndim);
+		bz::u64 temp_idx = i; 
+		for(bz::i32 j = 0; j < this->_ndim; j++){
+			coords[j] = temp_idx / this->_strides[j];
+			temp_idx  = temp_idx % _strides[j];
+		}
+		bz::u64 out_idx  = 0; 
+		bz::i32 out_dim_counter = 0; 
+		for(bz::i32 j = 0; j < this->_ndim; j++){
+			if(j == (bz::i32)axis)	continue;
+			out_idx += coords[j] * out._strides[out_dim_counter];
+			out_dim_counter++;
+		}
+		out._data[out_idx] += this->_data[i];
+	}
+	return out;
+}
+
+bz::tensor bz::tensor::mean (u32 axis) const {
+	bz::tensor out = this->sum(axis);
+	bz::f32 divisor = (bz::f32)this->_shape[axis];
+	return out / divisor;
+}
 
 
+// bz::tensor bz::tensor::sum (i32 axis) const;
+// bz::tensor bz::tensor::min (i32 axis) const;
+// bz::tensor bz::tensor::mean(i32 axis) const;
+// bz::tensor bz::tensor::std (i32 axis) const;
 
 
 

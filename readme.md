@@ -73,6 +73,7 @@ I've tried to keep the dependencies minimal, but BLAS/LAPACK were used to make t
 -   OpenMP parallelization
 -   INT8 quantization 
 -   Memory Mapped weight loading 
+-   Change the way bz reductions are calculated; move to a recursive solution / hardcoded loops.
 
 
 

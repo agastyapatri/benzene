@@ -11,17 +11,16 @@ namespace bz{
 
 typedef uint32_t u32; 
 typedef uint64_t u64; 
-typedef int64_t  i64; 
 typedef int32_t  i32; 
+typedef int64_t  i64; 
 typedef float  	 f32; 
 typedef double   f64; 
 typedef std::vector<uint32_t> vu32; 
 typedef std::vector<uint64_t> vu64; 
-typedef std::vector<int64_t>  vi64; 
 typedef std::vector<int32_t>  vi32; 
+typedef std::vector<int64_t>  vi64; 
 typedef std::vector<float> 	  vf32; 
 typedef std::vector<double>   vf64; 
-
 
 
 class tensor{
@@ -31,7 +30,6 @@ class tensor{
 	u64  _numel;
 	i32  _ndim;
 	void compute_strides();
-
 public: 
 	tensor(vi32 shape); 
 	tensor(vi32 shape, std::initializer_list<float> values); 
@@ -43,7 +41,7 @@ public:
 	vi32 shape()   const {return _shape;}
 	vi32 strides() const {return _strides;}
 	u64  numel()   const {return _numel; }
-	i32  ndim()    const {return _ndim  ; }
+	i32  ndim()    const {return _ndim;}
 
 	//	overloaded operators
 	tensor operator+(const tensor& other) const;
@@ -80,11 +78,11 @@ public:
 
 	//	 TODO >:(
 	//	reductions
-	tensor mean(i32 axis) const;
-	tensor std (i32 axis) const;
-	tensor max (i32 axis) const;
-	tensor min (i32 axis) const;
-	tensor sum (i32 axis) const;
+	tensor mean(u32 axis) const;
+	tensor std (u32 axis) const;
+	tensor max (u32 axis) const;
+	tensor min (u32 axis) const;
+	tensor sum (u32 axis) const;
 
 	//	math on tensors for llm purposes
 	static tensor matmul(const tensor& inp1, const tensor& inp2);

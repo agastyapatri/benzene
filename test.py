@@ -3,8 +3,8 @@ import torch
 
 # x = np.random.randn(2,3,4,5)
 if __name__ == "__main__":
-    x = torch.randn(2,3,4)
-    y = torch.randn(4,3,2)
-    z = torch.matmul(x, y)
-    print(z.shape)
+    x = torch.ones(2,10,5)
+    y = torch.ones(10,5)
+    z = x + y
+    print(z)
 

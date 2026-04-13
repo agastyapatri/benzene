@@ -78,4 +78,32 @@ I've tried to keep the dependencies minimal, but BLAS/LAPACK were used to make t
 
 
 
+##  TODOS
+1.  fix `rand_he` and `rand_xavier`
+2.  Look into the random device generation method for bz::tensor random factory. Consolidate the RNG engine in the private section of the tensor class
+3.  fix `bz::matmul` and `bz::mat_vec_product`; current implemenation  of `f32` casting is undefined behaviour.
+4.  fix the broadcasting in `operator+` and `operator-`
+5.  add the `flat_index_to_coord` helper
+6.  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

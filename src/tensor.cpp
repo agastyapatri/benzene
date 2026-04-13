@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cfloat>
+#include <initializer_list>
 #include <random> 
 #include <cmath>
 #include <openblas/cblas.h> 
@@ -31,7 +32,7 @@ tensor::tensor(vi32 shape, std::initializer_list<float> values) : tensor(shape){
 
 
 float tensor::at(vi32 idxs) const {
-	assert(idxs.size() == _numel);
+	assert((i32)idxs.size() == _ndim);
 	int offset = 0;
 	for(int i = 0; i < _ndim; i++){
 		assert(idxs[i] >= 0 && idxs[i] < _shape[i]);
@@ -41,7 +42,7 @@ float tensor::at(vi32 idxs) const {
 }
 
 float& tensor::at(vi32 idxs){
-	assert(idxs.size() == _numel);
+	assert((i32)idxs.size() == _ndim);
 	int offset = 0;
 	for(int i = 0; i < _ndim; i++){
 		assert(idxs[i] >= 0 && idxs[i] < _shape[i]);
@@ -100,10 +101,18 @@ tensor tensor::zeros(vi32 shape){
 
 
 tensor tensor::operator+(const tensor& other) const {
-	assert(_shape == other._shape);
-	tensor out(_shape);
-	for(u64 i = 0; i < _numel; i++)
-		out._data[i] = _data[i] + other._data[i];
+	// assert(this->_shape == other._shape);
+	// tensor out(this->_shape);
+	tensor out(this->_shape);
+	if(this->_shape == other._shape){
+		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
+		cblas_saxpy(
+			out._numel, 
+			1.0f,
+			other._data.data(), 1, 
+			out._data.data(), 1
+		);
+	}
 	return out;
 }
 
@@ -121,14 +130,14 @@ tensor tensor::operator-(f32 scalar) const{
 	return out;
 }
 
-tensor tensor::pow(const u32 exponent) const{
+tensor tensor::pow(const f32 exponent) const{
 	tensor out(this->_shape);
 	for(u64 i = 0; i < _numel; i++)
 		out._data[i] = std::pow(this->_data[i], exponent);
 	return out;
 } 
 
-void tensor::pow_(const u32 exponent) {
+void tensor::pow_(const f32 exponent) {
 	for(u64 i = 0; i < _numel; i++)
 		this->_data[i] = std::pow(this->_data[i], exponent);
 } 
@@ -379,49 +388,59 @@ tensor tensor::matmul(const tensor& other) const{
 	return out;
 }
 
-tensor tensor::matmul(const tensor& inp1, const tensor& inp2){
-	assert((inp1._ndim == 2) && (inp2._ndim == 2));
-	assert(inp1._shape[1] == inp2._shape[0]);
-	i32 M = inp1._shape[0];		// inp1 rows
-	i32 N = inp2._shape[1];		// inp2 col
-	i32 K = inp1._shape[1];		// inp1 cols
-	tensor out({M, N});
-	cblas_sgemm(
-		CblasRowMajor, CblasNoTrans, CblasNoTrans, 
-		M, N, K, 
-		1.0f, 
-		inp1._data.data(), K, 
-		inp2._data.data(), N,
-		0.0f, 
-		out._data.data(), N
-	);
-	return out;
-}
-
-tensor tensor::mat_vec_mul(const tensor& inp1, const tensor& inp2){
-	assert(inp1._ndim == 2);
-	assert(inp2._ndim == 1);
-	assert(inp1._shape[1] == inp2._shape[0]);
-	i32 M = inp1._shape[0];
-	i32 N = inp1._shape[1];
-	tensor out({M});
-	cblas_sgemv(
-		CblasRowMajor, CblasNoTrans, 
-		M, N, 
-		1.0f, 
-		inp1._data.data(), N, 
-		inp2._data.data(), 1,
-		0.0f, 
-		out._data.data(),
-		1
-	);
-	return out;
-
-}
-// tensor vec_mat_mul(const tensor& inp1, const tensor& inp2);
-// tensor dot(const tensor& inp1, const tensor& inp2);
-
-
+// tensor matmul(const tensor& inp1, const tensor& inp2){
+// 	assert((inp1.ndim() == 2) && (inp2.ndim() == 2));
+// 	assert(inp1.shape()[1] == inp2.shape()[0]);
+// 	i32 M = inp1.shape()[0];		// inp1 rows
+// 	i32 N = inp2.shape()[1];		// inp2 col
+// 	i32 K = inp1.shape()[1];		// inp1 cols
+// 	tensor out({M, N});
+// 	cblas_sgemm(
+// 		CblasRowMajor, CblasNoTrans, CblasNoTrans, 
+// 		M, N, K, 
+// 		1.0f, 
+// 		(f32*)inp1.data().data(), K, 
+// 		(f32*)inp2.data().data(), N,
+// 		0.0f, 
+// 		(f32*)out.data().data(), N
+// 	);
+// 	return out;
+// }
+//
+// tensor mat_vec_mul(const tensor& inp1, const tensor& inp2){
+// 	assert(inp1.ndim() == 2);
+// 	assert(inp2.ndim() == 1);
+// 	assert(inp1.shape()[1] == inp2.shape()[0]);
+// 	i32 M = inp1.shape()[0];
+// 	i32 N = inp1.shape()[1];
+// 	tensor out({M});
+// 	cblas_sgemv(
+// 		CblasRowMajor, CblasNoTrans, 
+// 		M, N, 
+// 		1.0f, 
+// 		(f32*)inp1.data().data(), N, 
+// 		(f32*)inp2.data().data(), 1,
+// 		0.0f, 
+// 		(f32*)out.data().data(),
+// 		1
+// 	);
+// 	return out;
+// }
+//
+// tensor dot(const tensor& inp1, const tensor& inp2){
+// 	assert(inp1.ndim() == 1 && inp2.ndim() == 1);
+// 	assert(inp1.shape()[0] == inp2.shape()[0]);
+// 	i32 N = inp1.shape()[0];
+// 	tensor out({1});
+// 	f32 res = cblas_sdot(
+// 		N,
+// 		(f32*)inp1.data().data(), 1, 
+// 		(f32*)inp2.data().data(), 1 
+// 	);
+// 	out.at({0}) = res;
+// 	return out;
+// }
+//
 
 
 }

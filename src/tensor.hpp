@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <iostream>
+#include <random>
 #include <vector>
 #include <initializer_list>
 #include <numbers> 
@@ -30,6 +31,7 @@ class tensor{
 	u64  _numel;
 	i32  _ndim;
 	void compute_strides();
+	// static std::mt19937 rand_engine;
 public: 
 	tensor(vi32 shape); 
 	tensor(vi32 shape, std::initializer_list<float> values); 
@@ -38,9 +40,9 @@ public:
 	//	accessors 
 	f32 at(vi32 idxs) const;
 	f32& at(vi32 idxs);
-	std::vector<float> data()    const	{return _data;}
-	vi32 shape()   const {return _shape;}
-	vi32 strides() const {return _strides;}
+	const vf32& data()    const	{return _data;}
+	const vi32& shape()   const {return _shape;}
+	const vi32& strides() const {return _strides;}
 	u64  numel()   const {return _numel; }
 	i32  ndim()    const {return _ndim;}
 
@@ -52,8 +54,8 @@ public:
 	tensor operator/(f32 scalar) const;
 	tensor operator+(f32 scalar) const;
 	tensor operator-(f32 scalar) const;
-	tensor pow(const u32 exponent) const; 
-	void   pow_(const u32 exponent);
+	tensor pow(const f32 exponent) const; 
+	void   pow_(const f32 exponent);
 	friend std::ostream& operator<<(std::ostream& os, const tensor& t);
 
 	// factory
@@ -83,24 +85,27 @@ public:
 
 	//	reductions
 	tensor mean(u32 axis) const;
-	tensor std (u32 axis) const;
 	tensor max (u32 axis) const;
 	tensor min (u32 axis) const;
 	tensor sum (u32 axis) const;
 	tensor matmul(const tensor& other) const;
 
-	//	math on tensors for llm purposes
-
+	//	TODO
 	tensor softmax(i32 dim) const;
 	tensor layer_norm(const tensor& weight, const tensor& bias) const;
 	tensor rmsnorm() const;
-
-	static tensor matmul(const tensor& inp1, const tensor& inp2);
-	static tensor mat_vec_mul(const tensor& inp1, const tensor& inp2);
 	static tensor vec_mat_mul(const tensor& inp1, const tensor& inp2);
-	static tensor dot(const tensor& inp1, const tensor& inp2);
+	tensor stddev(u32 axis) const;
+	tensor transpose(i32 dim0, i32 dim1);
+
+	friend tensor matmul(const tensor& inp1, const tensor& inp2);
+	friend tensor mat_vec_mul(const tensor& inp1, const tensor& inp2);
+	friend tensor dot(const tensor& inp1, const tensor& inp2);
+
+
 
 };
+
 
 
 

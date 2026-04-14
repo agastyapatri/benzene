@@ -1,6 +1,6 @@
-#pragma once
 #include <cstdint>
 #include <iostream>
+#include <optional>
 #include <random>
 #include <vector>
 #include <initializer_list>
@@ -30,8 +30,23 @@ class tensor{
 	vi32 _strides;
 	u64  _numel;
 	i32  _ndim;
+
+	//	calculates the strides of the tensor from the n-dim shape vector
 	void compute_strides();
-	// static std::mt19937 rand_engine;
+
+	//	given the location of an element in the flat data vector, returns the true location.
+	vi32 flat_idx_to_coord(u64 idx) const;
+
+	// calculates the reduced dimesions for the output of tensor reductions 
+	vi32 reduced_shape(u32 axis) const;
+
+	//	checks if another tensor is compatible for broadcasted arithmetic according to
+	//	the NumPy broadcasting rules.
+	std::optional<vi32> broadcast_shapes(const vi32& s1, const vi32& s2) const;
+
+
+	//	initiating a  random engine
+	static std::mt19937 rand_engine;
 public: 
 	tensor(vi32 shape); 
 	tensor(vi32 shape, std::initializer_list<float> values); 
@@ -53,6 +68,7 @@ public:
 	tensor operator*(f32 scalar) const;
 	tensor operator/(f32 scalar) const;
 	tensor operator+(f32 scalar) const;
+
 	tensor operator-(f32 scalar) const;
 	tensor pow(const f32 exponent) const; 
 	void   pow_(const f32 exponent);
@@ -65,8 +81,8 @@ public:
 	static tensor randn(vi32 shape);
 	static tensor rand_uniform(vi32 shape, f32 low = 0.0f, f32 high = 1.0f);
 	static tensor rand_normal (vi32 shape, f32 mean, f32 std);
-	static tensor rand_he 	  (vi32 shape, f32 fan_in);
-	static tensor rand_xavier (vi32 shape, f32 fan_in, f32 fan_out);
+	static tensor rand_he 	  (vi32 shape, i32 fan_in);
+	static tensor rand_xavier (vi32 shape, i32 fan_in, i32 fan_out);
 
 	//	transcendentals; new
 	tensor log()  const;
@@ -89,21 +105,20 @@ public:
 	tensor min (u32 axis) const;
 	tensor sum (u32 axis) const;
 	tensor matmul(const tensor& other) const;
+	friend tensor matmul(const tensor& inp1, const tensor& inp2);
+	friend tensor mat_vec_mul(const tensor& inp1, const tensor& inp2);
+	friend tensor dot(const tensor& inp1, const tensor& inp2);
 
 	//	TODO
 	tensor softmax(i32 dim) const;
 	tensor layer_norm(const tensor& weight, const tensor& bias) const;
 	tensor rmsnorm() const;
-	static tensor vec_mat_mul(const tensor& inp1, const tensor& inp2);
 	tensor stddev(u32 axis) const;
-	tensor transpose(i32 dim0, i32 dim1);
+	tensor transpose(i32 dim0, i32 dim1) const ;
 
-	friend tensor matmul(const tensor& inp1, const tensor& inp2);
-	friend tensor mat_vec_mul(const tensor& inp1, const tensor& inp2);
-	friend tensor dot(const tensor& inp1, const tensor& inp2);
-
-
-
+	friend tensor operator+(f32 scalar, const tensor& t);
+	friend tensor operator*(f32 scalar, const tensor& t);
+	friend tensor vec_mat_mul(const tensor& inp1, const tensor& inp2);
 };
 
 

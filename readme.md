@@ -79,22 +79,15 @@ I've tried to keep the dependencies minimal, but BLAS/LAPACK were used to make t
 
 
 ##  TODOS
-1.  fix `rand_he` and `rand_xavier`
-2.  Look into the random device generation method for bz::tensor random factory. Consolidate the RNG engine in the private section of the tensor class
-3.  fix `bz::matmul` and `bz::mat_vec_product`; current implemenation  of `f32` casting is undefined behaviour.
-4.  fix the broadcasting in `operator+` and `operator-`
-5.  add the `flat_index_to_coord` helper
-6.  
+NumPy broadcasting rules: 
 
+Broadcasting is NumPy's mechanism for performing arithmetic operations on arrays of different shapes by stretching them to match. 
 
-
-
-
-
-
-
-
-
+There are three fundamental rules to determine if two arrays are compatible
+0.  Compare their dimensions starting from the right (trailing side) and moves left
+1.  Dimension Alginment: if arrays have a different number of dimensions, the shape of the one with the fewer dimensions is padded with ones on its leading (left) side. 
+2.  Compatibility check: for each dimension, the sizes are compatible if either they are equal or one of them is one. 
+3.  Broadcasting failure: If in any dimension the sizes are different and neither is one, a ValueError is raised.
 
 
 

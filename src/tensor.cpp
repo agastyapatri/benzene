@@ -6,22 +6,24 @@
 #include <random> 
 #include <cmath>
 #include <openblas/cblas.h> 
+#include <stdexcept>
 
 namespace bz{
+
+std::mt19937 tensor::rand_engine(std::random_device{}());
 
 tensor::tensor(vi32 shape){
 	_shape = shape;
 	_ndim  = shape.size(); 
 	_numel = 1; 
 	for(int i : shape) _numel *= i;
-	_strides.resize(_ndim, 1);
 	compute_strides();
 	_data.resize(_numel, 0.0f);
 }
 
-std::mt19937 tensor::rand_engine(std::random_device{}());
 
 void tensor::compute_strides(){
+	_strides.resize(_ndim, 1);
 	for(int i = _ndim - 2; i >= 0; i--){
 		_strides[i] = _strides[i + 1] * _shape[i + 1];
 	}
@@ -31,7 +33,7 @@ vi32 tensor::flat_idx_to_coord(u64 idx) const {
 	vi32 coords(this->_ndim, 0);
 	for(i32 j = 0; j < this->_ndim; j++){
 		coords[j] = idx / this->_strides[j];
-		idx  = idx % _strides[j];
+		idx  = idx % this->_strides[j];
 	}
 	return coords;
 }
@@ -46,15 +48,16 @@ vi32 tensor::reduced_shape(u32 axis) const{
 	return outshape;
 }
 
-std::optional<vi32> tensor::broadcast_shapes(const vi32& s1, const vi32& s2) const{
-	i32 ndim1 = s1.size(); 
-	i32 ndim2 = s2.size();
+std::optional<vi32> tensor::broadcast_shapes(const vi32& shape1, const vi32& shape2) const{
+	//	the smaller tensor is stretched over the larger; out takes the shape of the larger. 
+	i32 ndim1 = shape1.size(); 
+	i32 ndim2 = shape2.size();
 	i32 out_ndim = std::max(ndim1, ndim2);
 	vi32 out_shape(out_ndim);
 
 	for(i32 i = 0; i < out_ndim; i++){
-		i32 d1 = (i < out_ndim - ndim1) ? 1 : s1[i - (out_ndim - ndim1)];
-		i32 d2 = (i < out_ndim - ndim2) ? 1 : s1[i - (out_ndim - ndim2)];
+		i32 d1 = (i < out_ndim - ndim1) ? 1 : shape1[i - (out_ndim - ndim1)];
+		i32 d2 = (i < out_ndim - ndim2) ? 1 : shape2[i - (out_ndim - ndim2)];
 
 		if(d1 == d2){
 			out_shape[i] = d1; 
@@ -146,8 +149,13 @@ tensor tensor::zeros(vi32 shape){
 
 tensor tensor::operator+(const tensor& other) const {
 	// assert(this->_shape == other._shape);
-	// tensor out(this->_shape);
-	tensor out(this->_shape);
+	auto outshape = broadcast_shapes(this->_shape, other._shape);
+	if(!outshape){
+		throw std::runtime_error("Tensors are not broadcast compatible.");
+	}
+	tensor out(outshape.value());
+
+	//	if both shapes are equal, simply add elementwise.
 	if(this->_shape == other._shape){
 		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
 		cblas_saxpy(
@@ -156,12 +164,40 @@ tensor tensor::operator+(const tensor& other) const {
 			other._data.data(), 1, 
 			out._data.data(), 1
 		);
+		return out;
 	}
-	return out;
+
+	//	(M, N) + (N)
+	if(this->_ndim == 2 && other._ndim  == 1 && this->_shape[1] == other._shape[0]){
+		i32 M = this->_shape[0];
+		i32 N = this->_shape[1];
+		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
+		for(i32 i = 0; i < M; i++){
+			cblas_saxpy(
+				N,
+				1.0f,
+				other._data.data(), 1, 
+				out._data.data() + (i * N), 1
+			);
+		}
+		return out;
+	}
+	if(other._numel == 1){
+		tensor out(this->_shape);
+		float scalar = other._data[0];
+		for(u64 i = 0; i < _numel; i++)
+			out._data[i] = this->_data[i] + scalar;
+		return out;
+	}
+
+
+	//	TODO: handle the generic case. 
+	//	Proper output has to be handled, currently returns 0
+	throw std::runtime_error("Broacasting pattern not currently handled by Benzene");
 }
 
 tensor tensor::operator+(f32 scalar) const{
-	tensor out(_shape);
+	tensor out(this->_shape);
 	for(u64 i = 0; i < _numel; i++)
 		out._data[i] = _data[i] + scalar;
 	return out;
@@ -221,7 +257,7 @@ tensor tensor::operator/(float scalar) const {
 tensor tensor::rand_uniform(vi32 shape, f32 low, f32 high){
 	tensor out(shape);
 	std::uniform_real_distribution<f32> dist(low, high);
-	std::generate(out._data.begin(), out._data.end(), [&](){
+	std::generate(out._data.begin(), out._data.end(), [&]()->f32{
 			return dist(rand_engine);
 	});
 	return out;
@@ -230,7 +266,7 @@ tensor tensor::rand_uniform(vi32 shape, f32 low, f32 high){
 tensor tensor::rand_normal(vi32 shape, f32 mean, f32 std){
 	tensor out(shape);
 	std::normal_distribution<f32> dist(mean, std);
-	std::generate(out._data.begin(), out._data.end(), [&](){
+	std::generate(out._data.begin(), out._data.end(), [&]()->f32{
 			return dist(rand_engine);
 	});
 	return out;
@@ -240,53 +276,15 @@ tensor tensor::randn(vi32 shape){
 	return tensor::rand_normal(shape, 0, 1);
 }
 
-tensor tensor::rand_he(vi32 shape, i32 fan_in){
+tensor tensor::rand_he(vi32 shape, u32 fan_in){
 	return tensor::rand_normal(shape, 0, std::sqrt(2.0f / fan_in));
 }
 
-tensor tensor::rand_xavier(vi32 shape, i32 fan_in, i32 fan_out){
+tensor tensor::rand_xavier(vi32 shape, u32 fan_in, u32 fan_out){
 	return tensor::rand_normal(shape, 0, std::sqrt(2.0f / (fan_in + fan_out)));
 }
 
-tensor tensor::log() const {
-	tensor out(this->_shape);
-	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](f32 x){
-			return std::log(x);
-	});
-	return out;
-}
 
-tensor tensor::exp() const {
-	tensor out(this->_shape);
-	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](f32 x){
-			return std::exp(x);
-	});
-	return out;
-}
-
-tensor tensor::sin() const {
-	tensor out(this->_shape);
-	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](f32 x){
-			return std::sin(x);
-	});
-	return out;
-}
-
-tensor tensor::cos() const {
-	tensor out(this->_shape);
-	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](f32 x){
-			return std::cos(x);
-	});
-	return out;
-}
-
-tensor tensor::tanh() const {
-	tensor out(this->_shape);
-	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [](f32 x){
-			return std::tanh(x);
-	});
-	return out;
-}
 
 void tensor::log_(){
 	for(u64 i = 0; i < this->_numel; i++)
@@ -311,6 +309,16 @@ void tensor::cos_(){
 void tensor::tanh_(){
 	for(u64 i = 0; i < this->_numel; i++)
 		this->_data[i] = std::tanh(this->_data[i]);
+}
+
+void tensor::sigmoid_(){
+	for(u64 i = 0; i < this->_numel; i++)
+		this->_data[i] = (1 / (1 + std::exp(-this->_data[i])));
+}
+
+void tensor::relu_(){
+	for(u64 i = 0; i < this->_numel; i++)
+		this->_data[i] = (this->_data[i] > 0) ? this->_data[i] : 0.0;
 }
 
 tensor tensor::max (u32 axis) const {
@@ -454,6 +462,93 @@ tensor dot(const tensor& inp1, const tensor& inp2){
 	return out;
 }
 
+
+tensor tensor::leakyrelu(f32 negative_slope) const{
+	tensor out(this->_shape);
+	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [negative_slope](f32 x)->f32{
+		return (x > 0) ? x : -negative_slope;
+	});
+	return out;
+}
+
+tensor relu(const tensor& t){
+	tensor out(t._shape);
+	std::transform(t._data.begin(), t._data.end(), out._data.begin(), [](f32 x)->f32{
+		return (x > 0) ? x : 0;
+	});
+	return out;
+}
+
+tensor sigmoid(const tensor& t){
+	tensor out(t._shape);
+	std::transform(t._data.begin(), t._data.end(), out._data.begin(), [](f32 x)->f32{
+		return (1 / (1 + std::exp(x)));
+	});
+	return out;
+}
+
+tensor log(const tensor& t) {
+	tensor out(t._shape);
+	std::transform(t._data.begin(), t._data.end(), out._data.begin(), [](f32 x)->f32{
+			return std::log(x);
+	});
+	return out;
+}
+
+
+tensor exp(const tensor& t) {
+	tensor out(t._shape);
+	std::transform(t._data.begin(), t._data.end(), out._data.begin(), [](f32 x)->f32{
+			return std::exp(x);
+	});
+	return out;
+}
+
+tensor sin(const tensor& t){
+	tensor out(t._shape);
+	std::transform(t._data.begin(), t._data.end(), out._data.begin(), [](f32 x)->f32{
+			return std::sin(x);
+	});
+	return out;
+}
+
+tensor cos(const tensor& t){
+	tensor out(t._shape);
+	std::transform(t._data.begin(), t._data.end(), out._data.begin(), [](f32 x)->f32{
+			return std::cos(x);
+	});
+	return out;
+}
+
+tensor tanh(const tensor& t){
+	tensor out(t._shape);
+	std::transform(t._data.begin(), t._data.end(), out._data.begin(), [](f32 x)->f32{
+			return std::tanh(x);
+	});
+	return out;
+}
+
+tensor transpose(const tensor& t, u32 dim0, u32 dim1){
+	tensor out = t;
+	std::swap(out._shape[dim0], out._shape[dim1]);
+	std::swap(out._strides[dim0], out._strides[dim1]);
+	return out;
+}
+
+tensor reshape(const tensor& t, vi32 newshape){
+	tensor out;
+	out._shape = newshape;
+	out._ndim  = newshape.size(); 
+	out._numel = 1; 
+	for(i32 i : newshape) out._numel *= i;
+	if(out._numel != t._numel){
+		throw std::runtime_error("Error: Cannot reshape tensor of size " + std::to_string(t._numel) + " into " + std::to_string(out._numel));
+	}
+	out._strides.resize(out._ndim, 1);
+	out.compute_strides();
+	out._data = t._data;
+	return out;
+}
 
 
 }

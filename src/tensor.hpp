@@ -4,7 +4,7 @@
 #include <random>
 #include <vector>
 #include <initializer_list>
-#include <numbers> 
+
 #define DEGREES_TO_RADIANS(deg)	(deg * std::numbers::pi / 180)
 #define RADIANS_TO_DEGREES(rad) (rad * 180 / std::numbers::pi)
 
@@ -22,6 +22,23 @@ typedef std::vector<int32_t>  vi32;
 typedef std::vector<int64_t>  vi64; 
 typedef std::vector<float> 	  vf32; 
 typedef std::vector<double>   vf64; 
+
+class tensor; 
+tensor relu(const tensor& t);
+tensor sigmoid(const tensor& t);
+tensor matmul(const tensor& inp1, const tensor& inp2);
+tensor mat_vec_mul(const tensor& inp1, const tensor& inp2);
+tensor dot(const tensor& inp1, const tensor& inp2);
+tensor log(const tensor& t);
+tensor exp(const tensor& t);
+tensor sin(const tensor& t);
+tensor cos(const tensor& t);
+tensor tanh(const tensor& t);
+tensor softmax(const tensor& t);
+tensor rmsnorm(const tensor& t);
+tensor layernorm(const tensor& t);
+tensor transpose(const tensor& t, u32 dim0, u32 dim1);
+tensor reshape(const tensor& t, vi32 newshape);
 
 
 class tensor{
@@ -44,13 +61,17 @@ class tensor{
 	//	the NumPy broadcasting rules.
 	std::optional<vi32> broadcast_shapes(const vi32& s1, const vi32& s2) const;
 
-
 	//	initiating a  random engine
 	static std::mt19937 rand_engine;
+
 public: 
 	tensor(vi32 shape); 
 	tensor(vi32 shape, std::initializer_list<float> values); 
 	tensor() = default;
+
+
+	//	seeding the RNG 
+	static void manual_seed(u32 seed){rand_engine.seed(seed);}
 
 	//	accessors 
 	f32 at(vi32 idxs) const;
@@ -81,15 +102,8 @@ public:
 	static tensor randn(vi32 shape);
 	static tensor rand_uniform(vi32 shape, f32 low = 0.0f, f32 high = 1.0f);
 	static tensor rand_normal (vi32 shape, f32 mean, f32 std);
-	static tensor rand_he 	  (vi32 shape, i32 fan_in);
-	static tensor rand_xavier (vi32 shape, i32 fan_in, i32 fan_out);
-
-	//	transcendentals; new
-	tensor log()  const;
-	tensor exp()  const;
-	tensor sin()  const;
-	tensor cos()  const;
-	tensor tanh() const; 
+	static tensor rand_he 	  (vi32 shape, u32 fan_in);
+	static tensor rand_xavier (vi32 shape, u32 fan_in, u32 fan_out);
 
 	//	transcendentals; inplace
 	void log_();
@@ -97,6 +111,8 @@ public:
 	void sin_();
 	void cos_();
 	void tanh_();
+	void relu_(); 
+	void sigmoid_();
 
 
 	//	reductions
@@ -104,21 +120,43 @@ public:
 	tensor max (u32 axis) const;
 	tensor min (u32 axis) const;
 	tensor sum (u32 axis) const;
+
+	//	tensor ops; member functions
 	tensor matmul(const tensor& other) const;
+	tensor rmsnorm() const;
+	tensor layernorm() const;
+	tensor leakyrelu(f32 negative_slope) const;
+
+
+	//	tensor ops; namespace functions 
 	friend tensor matmul(const tensor& inp1, const tensor& inp2);
 	friend tensor mat_vec_mul(const tensor& inp1, const tensor& inp2);
 	friend tensor dot(const tensor& inp1, const tensor& inp2);
+	friend tensor operator*(f32 scalar, const tensor& t);
+	friend tensor relu(const tensor& t);
+	friend tensor log(const tensor& t) ;
+	friend tensor exp(const tensor& t) ;
+	friend tensor sin(const tensor& t) ;
+	friend tensor cos(const tensor& t) ;
+	friend tensor tanh(const tensor& t); 
+	friend tensor sigmoid(const tensor& t);
+
+
+	//	slices, views, reshapes, transposes
+	friend tensor transpose(const tensor& t, u32 dim0, u32 dim1);
+	friend tensor reshape(const tensor& t, vi32 newshape);
+
+
 
 	//	TODO
-	tensor softmax(i32 dim) const;
-	tensor layer_norm(const tensor& weight, const tensor& bias) const;
-	tensor rmsnorm() const;
+	// void softmax(i32 dim) const;
+	// void layer_norm(const tensor& weight, const tensor& bias) const;
+	// void rmsnorm() const;
 	tensor stddev(u32 axis) const;
-	tensor transpose(i32 dim0, i32 dim1) const ;
-
 	friend tensor operator+(f32 scalar, const tensor& t);
-	friend tensor operator*(f32 scalar, const tensor& t);
-	friend tensor vec_mat_mul(const tensor& inp1, const tensor& inp2);
+	friend tensor softmax(const tensor& t);
+	friend tensor rmsnorm(const tensor& t);
+	friend tensor layernorm(const tensor& t);
 };
 
 

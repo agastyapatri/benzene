@@ -79,15 +79,11 @@ I've tried to keep the dependencies minimal, but BLAS/LAPACK were used to make t
 
 
 ##  TODOS
-NumPy broadcasting rules: 
+1.  I need to be able to understand exactly why the reductions and broadcasted operations work the way they do. I cannot simply passively copy code and take things for granted without analysis.
+2.  `transpose` `view` `slice` and other more difficult things need to be worked on 
+3.  `softmax` `layer_norm` `rms_norm` 
+4.  Understand and decide what operations belong to the `namespace bz` and what operations belong to the `class tensor`
 
-Broadcasting is NumPy's mechanism for performing arithmetic operations on arrays of different shapes by stretching them to match. 
-
-There are three fundamental rules to determine if two arrays are compatible
-0.  Compare their dimensions starting from the right (trailing side) and moves left
-1.  Dimension Alginment: if arrays have a different number of dimensions, the shape of the one with the fewer dimensions is padded with ones on its leading (left) side. 
-2.  Compatibility check: for each dimension, the sizes are compatible if either they are equal or one of them is one. 
-3.  Broadcasting failure: If in any dimension the sizes are different and neither is one, a ValueError is raised.
 
 
 

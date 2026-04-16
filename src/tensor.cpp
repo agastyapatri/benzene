@@ -22,6 +22,17 @@ tensor::tensor(vi32 shape){
 }
 
 
+tensor tensor::eye(const i32 size){
+	tensor out({size, size});
+	for(i32 i = 0; i < size; i++){
+		out._data[i*size + i] = 1;
+	}
+	return out;
+}
+
+
+
+
 void tensor::compute_strides(){
 	_strides.resize(_ndim, 1);
 	for(int i = _ndim - 2; i >= 0; i--){
@@ -77,6 +88,23 @@ tensor::tensor(vi32 shape, std::initializer_list<float> values) : tensor(shape){
 	std::copy(values.begin(), values.end(), _data.begin());
 }
 
+bool tensor::operator==(const tensor& other) const {
+	if(this->_shape != other._shape) return false; 
+	for(u64 i = 0; i < this->_numel; i++){
+		if(this->_data[i] != other._data[i])
+			return false;
+	}
+	return true; 
+}
+
+bool tensor::operator!=(const tensor& other) const {
+	if(this->_shape != other._shape) return true; 
+	for(u64 i = 0; i < this->_numel; i++){
+		if(this->_data[i] != other._data[i])
+			return true;
+	}
+	return false; 
+}
 
 float tensor::at(vi32 idxs) const {
 	assert((i32)idxs.size() == _ndim);
@@ -225,19 +253,94 @@ void tensor::pow_(const f32 exponent) {
 
 
 tensor tensor::operator-(const tensor& other) const {
-	assert(_shape == other._shape);
-	tensor out(_shape);
-	for(u64 i = 0; i < _numel; i++)
-		out._data[i] = _data[i] - other._data[i];
-	return out;
+	// assert(this->_shape == other._shape);
+	auto outshape = broadcast_shapes(this->_shape, other._shape);
+	if(!outshape){
+		throw std::runtime_error("Tensors are not broadcast compatible.");
+	}
+	tensor out(outshape.value());
+
+	//	if both shapes are equal, simply add elementwise.
+	if(this->_shape == other._shape){
+		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
+		cblas_saxpy(
+			out._numel, 
+			-1.0f,
+			other._data.data(), 1, 
+			out._data.data(), 1
+		);
+		return out;
+	}
+
+	//	(M, N) + (N)
+	if(this->_ndim == 2 && other._ndim  == 1 && this->_shape[1] == other._shape[0]){
+		i32 M = this->_shape[0];
+		i32 N = this->_shape[1];
+		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
+		for(i32 i = 0; i < M; i++){
+			cblas_saxpy(
+				N,
+				-1.0f,
+				other._data.data(), 1, 
+				out._data.data() + (i * N), 1
+			);
+		}
+		return out;
+	}
+	if(other._numel == 1){
+		tensor out(this->_shape);
+		float scalar = other._data[0];
+		for(u64 i = 0; i < _numel; i++)
+			out._data[i] = this->_data[i] - scalar;
+		return out;
+	}
+
+
+	//	TODO: handle the generic case. 
+	//	Proper output has to be handled, currently returns 0
+	throw std::runtime_error("Broacasting pattern not currently handled by Benzene");
 }
 
 tensor tensor::operator*(const tensor& other) const {
-	assert(_shape == other._shape);
-	tensor out(_shape);
-	for(u64 i = 0; i < _numel; i++)
-		out._data[i] = _data[i] * other._data[i];
-	return out;
+	// assert(this->_shape == other._shape);
+	auto outshape = broadcast_shapes(this->_shape, other._shape);
+	if(!outshape){
+		throw std::runtime_error("Tensors are not broadcast compatible.");
+	}
+	tensor out(outshape.value());
+
+	//	if both shapes are equal, simply add elementwise.
+	if(this->_shape == other._shape){
+		for(u64 i = 0; i < this->_numel; i++)
+			out._data[i] = this->_data[i] * other._data[i];
+		return out;
+	}
+
+	//	(M, N) + (N)
+	if(this->_ndim == 2 && other._ndim  == 1 && this->_shape[1] == other._shape[0]){
+		u32 M = this->_shape[0];
+		u32 N = this->_shape[1];
+		for(u32 i = 0; i < M; i++){
+			for(u32 j = 0; j < N; j++){
+				out._data[i * N + j] = this->_data[i * N + j] * other._data[j]; 
+			}
+		}
+		return out;
+	}
+
+	//	(M, N, K ...) * (1)
+	if(other._numel == 1){
+		tensor out(this->_shape);
+		float scalar = other._data[0];
+		for(u64 i = 0; i < _numel; i++)
+			out._data[i] = this->_data[i] * scalar;
+		return out;
+	}
+
+
+	//	TODO: handle the generic case. 
+	//	Proper output has to be handled, currently returns 0
+	throw std::runtime_error("Broacasting pattern not currently handled by Benzene");
 }
 
 tensor tensor::operator*(float scalar) const {
@@ -535,18 +638,12 @@ tensor transpose(const tensor& t, u32 dim0, u32 dim1){
 	return out;
 }
 
-tensor reshape(const tensor& t, vi32 newshape){
-	tensor out;
-	out._shape = newshape;
-	out._ndim  = newshape.size(); 
-	out._numel = 1; 
-	for(i32 i : newshape) out._numel *= i;
-	if(out._numel != t._numel){
-		throw std::runtime_error("Error: Cannot reshape tensor of size " + std::to_string(t._numel) + " into " + std::to_string(out._numel));
-	}
-	out._strides.resize(out._ndim, 1);
-	out.compute_strides();
-	out._data = t._data;
+tensor softmax(const tensor& t, i32 dim){
+	tensor out(t._shape);
+
+
+
+
 	return out;
 }
 

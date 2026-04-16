@@ -28,14 +28,14 @@ I've tried to keep the dependencies minimal, but BLAS/LAPACK were used to make t
 -   ~Reductions~ 
 -   ~Arithmetic; operator overloading~
 -   ~matmul (BLAS)~ 
+-   ~transpose~ 
+-   ~Broadcasting~ 
 -   softmax 
 -   layer_norm 
 -   rmsnorm 
 -   reshape 
--   transpose 
 -   slice 
 -   concat 
--   Broadcasting 
 -   Tensor I/O 
 
 2.  Neural Network Primitives 

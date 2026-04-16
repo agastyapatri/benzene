@@ -34,11 +34,14 @@ tensor exp(const tensor& t);
 tensor sin(const tensor& t);
 tensor cos(const tensor& t);
 tensor tanh(const tensor& t);
-tensor softmax(const tensor& t);
+tensor softmax(const tensor& t, i32 dim);
 tensor rmsnorm(const tensor& t);
 tensor layernorm(const tensor& t);
 tensor transpose(const tensor& t, u32 dim0, u32 dim1);
-tensor reshape(const tensor& t, vi32 newshape);
+
+
+
+// tensor reshape(const tensor& t, vi32 newshape);
 
 
 class tensor{
@@ -83,6 +86,8 @@ public:
 	i32  ndim()    const {return _ndim;}
 
 	//	overloaded operators
+	bool operator==(const tensor& other) const;
+	bool operator!=(const tensor& other) const;
 	tensor operator+(const tensor& other) const;
 	tensor operator-(const tensor& other) const;
 	tensor operator*(const tensor& other) const;
@@ -104,6 +109,7 @@ public:
 	static tensor rand_normal (vi32 shape, f32 mean, f32 std);
 	static tensor rand_he 	  (vi32 shape, u32 fan_in);
 	static tensor rand_xavier (vi32 shape, u32 fan_in, u32 fan_out);
+	static tensor eye(const i32 size);
 
 	//	transcendentals; inplace
 	void log_();
@@ -144,17 +150,14 @@ public:
 
 	//	slices, views, reshapes, transposes
 	friend tensor transpose(const tensor& t, u32 dim0, u32 dim1);
-	friend tensor reshape(const tensor& t, vi32 newshape);
+	// friend tensor reshape(const tensor& t, vi32 newshape);
 
 
 
 	//	TODO
-	// void softmax(i32 dim) const;
-	// void layer_norm(const tensor& weight, const tensor& bias) const;
-	// void rmsnorm() const;
 	tensor stddev(u32 axis) const;
 	friend tensor operator+(f32 scalar, const tensor& t);
-	friend tensor softmax(const tensor& t);
+	friend tensor softmax(const tensor& t, i32 dim);
 	friend tensor rmsnorm(const tensor& t);
 	friend tensor layernorm(const tensor& t);
 };

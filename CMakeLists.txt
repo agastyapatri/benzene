@@ -11,6 +11,7 @@ find_package(BLAS REQUIRED)
 #	Gathering source files and telling cmake to build all sources and main.cpp into a single file called benzene.
 set(SOURCES
 	src/tensor.cpp 
+	src/nn.cpp
 )
 add_executable(benzene main.cpp ${SOURCES})
 

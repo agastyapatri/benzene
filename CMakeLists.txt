@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 #finding OpenBLAS
 set(BLA_VENDOR OpenBLAS)
 find_package(BLAS REQUIRED)
+find_package(OpenMP REQUIRED)
 
 
 #	Gathering source files and telling cmake to build all sources and main.cpp into a single file called benzene.
@@ -19,5 +20,5 @@ add_executable(benzene main.cpp ${SOURCES})
 target_include_directories(benzene PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 #	linking the math library
-target_link_libraries(benzene PRIVATE ${BLAS_LIBRARIES})
+target_link_libraries(benzene PRIVATE ${BLAS_LIBRARIES} OpenMP::OpenMP_CXX)
 

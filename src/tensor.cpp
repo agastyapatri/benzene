@@ -205,6 +205,7 @@ tensor tensor::operator+(const tensor& other) const {
 	if(other._numel == 1){
 		tensor out(this->_shape);
 		float scalar = other._data[0];
+		#pragma omp parallel for
 		for(u64 i = 0; i < _numel; i++)
 			out._data[i] = this->_data[i] + scalar;
 		return out;
@@ -218,6 +219,7 @@ tensor tensor::operator+(const tensor& other) const {
 
 tensor tensor::operator+(f32 scalar) const{
 	tensor out(this->_shape);
+	#pragma omp parallel for
 	for(u64 i = 0; i < _numel; i++)
 		out._data[i] = _data[i] + scalar;
 	return out;
@@ -225,6 +227,7 @@ tensor tensor::operator+(f32 scalar) const{
 
 tensor tensor::operator-(f32 scalar) const{
 	tensor out(_shape);
+	#pragma omp parallel for
 	for(u64 i = 0; i < _numel; i++)
 		out._data[i] = _data[i] - scalar;
 	return out;
@@ -232,12 +235,14 @@ tensor tensor::operator-(f32 scalar) const{
 
 tensor tensor::pow(const f32 exponent) const{
 	tensor out(this->_shape);
+	#pragma omp parallel for
 	for(u64 i = 0; i < _numel; i++)
 		out._data[i] = std::pow(this->_data[i], exponent);
 	return out;
 } 
 
 void tensor::pow_(const f32 exponent) {
+	#pragma omp parallel for
 	for(u64 i = 0; i < _numel; i++)
 		this->_data[i] = std::pow(this->_data[i], exponent);
 } 
@@ -282,6 +287,7 @@ tensor tensor::operator-(const tensor& other) const {
 	if(other._numel == 1){
 		tensor out(this->_shape);
 		float scalar = other._data[0];
+		#pragma omp parallel for
 		for(u64 i = 0; i < _numel; i++)
 			out._data[i] = this->_data[i] - scalar;
 		return out;
@@ -324,6 +330,7 @@ tensor tensor::operator*(const tensor& other) const {
 	if(other._numel == 1){
 		tensor out(this->_shape);
 		float scalar = other._data[0];
+		#pragma omp parallel for
 		for(u64 i = 0; i < _numel; i++)
 			out._data[i] = this->_data[i] * scalar;
 		return out;
@@ -337,6 +344,7 @@ tensor tensor::operator*(const tensor& other) const {
 
 tensor tensor::operator*(float scalar) const {
 	tensor out(_shape);
+	#pragma omp parallel for
 	for(u64 i = 0; i < _numel; i++)
 		out._data[i] = _data[i] * scalar;
 	return out;
@@ -344,6 +352,7 @@ tensor tensor::operator*(float scalar) const {
 
 tensor tensor::operator/(float scalar) const {
 	tensor out(_shape);
+	#pragma omp parallel for
 	for(u64 i = 0; i < _numel; i++)
 		out._data[i] = _data[i] / scalar;
 	return out;
@@ -390,36 +399,43 @@ tensor tensor::randu_xavier(vi32 shape, u32 fan_in, u32 fan_out){
 
 
 void tensor::log_(){
+    #pragma omp parallel for
 	for(u64 i = 0; i < this->_numel; i++)
 		this->_data[i] = std::log(this->_data[i]);
 }
 
 void tensor::exp_(){
+    #pragma omp parallel for
 	for(u64 i = 0; i < this->_numel; i++)
 		this->_data[i] = std::exp(this->_data[i]);
 }
 
 void tensor::sin_(){
+    #pragma omp parallel for
 	for(u64 i = 0; i < this->_numel; i++)
 		this->_data[i] = std::sin(this->_data[i]);
 }
 
 void tensor::cos_(){
+    #pragma omp parallel for
 	for(u64 i = 0; i < this->_numel; i++)
 		this->_data[i] = std::cos(this->_data[i]);
 }
 
 void tensor::tanh_(){
+    #pragma omp parallel for
 	for(u64 i = 0; i < this->_numel; i++)
 		this->_data[i] = std::tanh(this->_data[i]);
 }
 
 void tensor::sigmoid_(){
+    #pragma omp parallel for
 	for(u64 i = 0; i < this->_numel; i++)
 		this->_data[i] = (1 / (1 + std::exp(-this->_data[i])));
 }
 
 void tensor::relu_(){
+    #pragma omp parallel for
 	for(u64 i = 0; i < this->_numel; i++)
 		this->_data[i] = (this->_data[i] > 0) ? this->_data[i] : 0.0;
 }
@@ -584,17 +600,18 @@ tensor relu(const tensor& t){
 
 tensor gelu(const tensor& t){
 	tensor out(t._shape);
-	std::transform(t._data.begin(), t._data.end(), out._data.begin(), [](f32 x)->f32{
-		return (0.5*x) * (1 + std::tanh(SQRTTWOBYPI * (x + 0.047715 * x*x*x)));
-	});
+	#pragma omp parallel for
+	for(u64 i = 0; i < t._numel; i++)
+		out._data[i] = (0.5*t._data[i]) * (1 + std::tanh(SQRTTWOBYPI * (t._data[i] + 0.047715 * t._data[i] * t._data[i] * t._data[i])));
+
 	return out;
 }
 
 tensor sigmoid(const tensor& t){
 	tensor out(t._shape);
-	std::transform(t._data.begin(), t._data.end(), out._data.begin(), [](f32 x)->f32{
-		return (1 / (1 + std::exp(x)));
-	});
+	#pragma omp parallel for
+	for(u64 i = 0; i < t._numel; i++)
+		out._data[i] = (1 / (1 + std::exp(t._data[i])));
 	return out;
 }
 

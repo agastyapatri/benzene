@@ -30,17 +30,17 @@ I've tried to keep the dependencies minimal, but BLAS/LAPACK were used to make t
 -   ~matmul (BLAS)~ 
 -   ~transpose~ 
 -   ~Broadcasting~ 
--   softmax 
--   layer_norm 
--   rmsnorm 
+-   ~softmax~ 
+-   ~layer_norm~
+-   ~rmsnorm~ 
 -   reshape 
 -   slice 
 -   concat 
 -   Tensor I/O 
 
 2.  Neural Network Primitives 
--   Linear Layer 
--   GELU
+-   ~Linear Layer~
+-   ~GELU~
 -   Causal Self Attention
 -   Multi Head Self Attention
 -   Feed Forward Networks 

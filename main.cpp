@@ -1,3 +1,4 @@
+#include "nn.hpp"
 #include "tensor.hpp"
 #include <iostream> 
 #define ROWS 5
@@ -6,7 +7,9 @@
 
 int main(){
 	bz::tensor::manual_seed(0);
-	bz::tensor t1 = bz::tensor::eye(ROWS);
-	bz::tensor t2 = bz::tensor::randn({ROWS, COLS});
-	// std::cout << (bz::matmul(t1, t2) == bz::matmul(t2, t1)) << std::endl;
+	bz::tensor x =  bz::tensor::randn({3, 10});
+	bz::nn::Linear l1(10, 1);
+	bz::tensor out = l1(x);
+	std::cout << bz::gelu(out) << std::endl;
+
 }

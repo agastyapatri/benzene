@@ -1,3 +1,6 @@
+#ifndef BZ_TENSOR_HPP
+#define BZ_TENSOR_HPP
+
 #include <cstdint>
 #include <iostream>
 #include <optional>
@@ -7,6 +10,7 @@
 
 #define DEGREES_TO_RADIANS(deg)	(deg * std::numbers::pi / 180)
 #define RADIANS_TO_DEGREES(rad) (rad * 180 / std::numbers::pi)
+#define SQRTTWOBYPI 			(std::sqrt(2.0 / std::numbers::pi))
 
 namespace bz{
 
@@ -25,6 +29,7 @@ typedef std::vector<double>   vf64;
 
 class tensor; 
 tensor relu(const tensor& t);
+tensor gelu(const tensor& t);
 tensor sigmoid(const tensor& t);
 tensor matmul(const tensor& inp1, const tensor& inp2);
 tensor mat_vec_mul(const tensor& inp1, const tensor& inp2);
@@ -38,10 +43,6 @@ tensor softmax(const tensor& t, i32 dim);
 tensor rmsnorm(const tensor& t);
 tensor layernorm(const tensor& t);
 tensor transpose(const tensor& t, u32 dim0, u32 dim1);
-
-
-
-// tensor reshape(const tensor& t, vi32 newshape);
 
 
 class tensor{
@@ -104,11 +105,16 @@ public:
 	void   fill(f32 value);
 	static tensor zeros(vi32 shape);
 	static tensor ones(vi32 shape);
-	static tensor randn(vi32 shape);
-	static tensor rand_uniform(vi32 shape, f32 low = 0.0f, f32 high = 1.0f);
 	static tensor rand_normal (vi32 shape, f32 mean, f32 std);
-	static tensor rand_he 	  (vi32 shape, u32 fan_in);
-	static tensor rand_xavier (vi32 shape, u32 fan_in, u32 fan_out);
+	static tensor randn(vi32 shape);
+	static tensor randu(vi32 shape, f32 low = 0.0f, f32 high = 1.0f);
+	
+	static tensor randn_he 	  (vi32 shape, u32 fan_in);
+	static tensor randn_xavier (vi32 shape, u32 fan_in, u32 fan_out);
+
+	static tensor randu_he 	  (vi32 shape, u32 fan_in);
+	static tensor randu_xavier (vi32 shape, u32 fan_in, u32 fan_out);
+
 	static tensor eye(const i32 size);
 
 	//	transcendentals; inplace
@@ -140,6 +146,7 @@ public:
 	friend tensor dot(const tensor& inp1, const tensor& inp2);
 	friend tensor operator*(f32 scalar, const tensor& t);
 	friend tensor relu(const tensor& t);
+	friend tensor gelu(const tensor& t);
 	friend tensor log(const tensor& t) ;
 	friend tensor exp(const tensor& t) ;
 	friend tensor sin(const tensor& t) ;
@@ -147,15 +154,9 @@ public:
 	friend tensor tanh(const tensor& t); 
 	friend tensor sigmoid(const tensor& t);
 
-
-	//	slices, views, reshapes, transposes
 	friend tensor transpose(const tensor& t, u32 dim0, u32 dim1);
-	// friend tensor reshape(const tensor& t, vi32 newshape);
 
 
-
-	//	TODO
-	tensor stddev(u32 axis) const;
 	friend tensor operator+(f32 scalar, const tensor& t);
 	friend tensor softmax(const tensor& t, i32 dim);
 	friend tensor rmsnorm(const tensor& t);
@@ -167,3 +168,5 @@ public:
 
 
 }
+
+#endif // !BZ_TENSOR_HPP

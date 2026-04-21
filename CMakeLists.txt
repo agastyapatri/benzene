@@ -21,4 +21,3 @@ target_include_directories(benzene PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 #	linking the math library
 target_link_libraries(benzene PRIVATE ${BLAS_LIBRARIES})
 
-

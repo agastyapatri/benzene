@@ -30,9 +30,6 @@ tensor tensor::eye(const i32 size){
 	return out;
 }
 
-
-
-
 void tensor::compute_strides(){
 	_strides.resize(_ndim, 1);
 	for(int i = _ndim - 2; i >= 0; i--){
@@ -98,12 +95,7 @@ bool tensor::operator==(const tensor& other) const {
 }
 
 bool tensor::operator!=(const tensor& other) const {
-	if(this->_shape != other._shape) return true; 
-	for(u64 i = 0; i < this->_numel; i++){
-		if(this->_data[i] != other._data[i])
-			return true;
-	}
-	return false; 
+	return !(*this == other);
 }
 
 float tensor::at(vi32 idxs) const {
@@ -357,7 +349,7 @@ tensor tensor::operator/(float scalar) const {
 	return out;
 }
 
-tensor tensor::rand_uniform(vi32 shape, f32 low, f32 high){
+tensor tensor::randu(vi32 shape, f32 low, f32 high){
 	tensor out(shape);
 	std::uniform_real_distribution<f32> dist(low, high);
 	std::generate(out._data.begin(), out._data.end(), [&]()->f32{
@@ -379,12 +371,20 @@ tensor tensor::randn(vi32 shape){
 	return tensor::rand_normal(shape, 0, 1);
 }
 
-tensor tensor::rand_he(vi32 shape, u32 fan_in){
+tensor tensor::randn_he(vi32 shape, u32 fan_in){
 	return tensor::rand_normal(shape, 0, std::sqrt(2.0f / fan_in));
 }
 
-tensor tensor::rand_xavier(vi32 shape, u32 fan_in, u32 fan_out){
+tensor tensor::randn_xavier(vi32 shape, u32 fan_in, u32 fan_out){
 	return tensor::rand_normal(shape, 0, std::sqrt(2.0f / (fan_in + fan_out)));
+}
+
+tensor tensor::randu_he(vi32 shape, u32 fan_in){
+	return tensor::randu(shape, -std::sqrt(2.0f / fan_in), std::sqrt(2.0f / fan_in));
+}
+
+tensor tensor::randu_xavier(vi32 shape, u32 fan_in, u32 fan_out){
+	return tensor::randu(shape, -std::sqrt(2.0f / (fan_in + fan_out)), std::sqrt(2.0f / (fan_in + fan_out)));
 }
 
 
@@ -582,6 +582,14 @@ tensor relu(const tensor& t){
 	return out;
 }
 
+tensor gelu(const tensor& t){
+	tensor out(t._shape);
+	std::transform(t._data.begin(), t._data.end(), out._data.begin(), [](f32 x)->f32{
+		return (0.5*x) * (1 + std::tanh(SQRTTWOBYPI * (x + 0.047715 * x*x*x)));
+	});
+	return out;
+}
+
 tensor sigmoid(const tensor& t){
 	tensor out(t._shape);
 	std::transform(t._data.begin(), t._data.end(), out._data.begin(), [](f32 x)->f32{
@@ -638,14 +646,121 @@ tensor transpose(const tensor& t, u32 dim0, u32 dim1){
 	return out;
 }
 
-tensor softmax(const tensor& t, i32 dim){
-	tensor out(t._shape);
+tensor softmax(const tensor& t, i32 dim) {
+	// 1. Handle negative dimensions (PyTorch style)
+	if (dim < 0) dim += t.ndim();
+	
+	if (dim < 0 || dim >= t.ndim()) {
+		throw std::runtime_error("Softmax: Dimension out of range.");
+	}
 
+	tensor out(t.shape());
+	
+	// 2. Calculate spatial components
+	const vi32& shape = t.shape();
+	i32 outer_size = 1;
+	for (i32 i = 0; i < dim; ++i) outer_size *= shape[i];
 
+	i32 axis_size = shape[dim];
 
+	i32 inner_size = 1;
+	for (i32 i = dim + 1; i < t.ndim(); ++i) inner_size *= shape[i];
+
+	// 3. Perform Softmax
+	for (i32 o = 0; o < outer_size; ++o) {
+		for (i32 i = 0; i < inner_size; ++i) {
+			// Determine the offset for this specific slice
+			u64 base_idx = (o * axis_size * inner_size) + i;
+
+			// Step A: Find Max for stability
+			f32 max_val = t.data()[base_idx];
+			for (i32 a = 1; a < axis_size; ++a) {
+				f32 val = t.data()[base_idx + (a * inner_size)];
+				if (val > max_val) max_val = val;
+			}
+
+			// Step B: Compute Exponentials and Sum
+			f32 sum_exp = 0.0f;
+			for (i32 a = 0; a < axis_size; ++a) {
+				u64 current_idx = base_idx + (a * inner_size);
+				f32 e = std::exp(t.data()[current_idx] - max_val);
+				out._data[current_idx] = e;
+				sum_exp += e;
+			}
+
+			// Step C: Normalize
+			f32 inv_sum = 1.0f / (sum_exp + 1e-9f);
+			for (i32 a = 0; a < axis_size; ++a) {
+				out._data[base_idx + (a * inner_size)] *= inv_sum;
+			}
+		}
+	}
 
 	return out;
 }
+
+tensor rmsnorm(const tensor& t) {
+	tensor out(t.shape());
+	i32 last_dim = t.shape().back();
+	u64 num_rows = t.numel() / last_dim;
+	f32 eps = 1e-6f;
+
+	for (u64 r = 0; r < num_rows; ++r) {
+		u64 offset = r * last_dim;
+		const f32* in_ptr = t.data().data() + offset;
+		f32* out_ptr = out._data.data() + offset;
+
+		// 1. Calculate Mean Square
+		f32 ss = 0.0f; // sum of squares
+		for (i32 i = 0; i < last_dim; ++i) {
+			ss += in_ptr[i] * in_ptr[i];
+		}
+		f32 inv_rms = 1.0f / std::sqrt((ss / last_dim) + eps);
+
+		// 2. Scale
+		for (i32 i = 0; i < last_dim; ++i) {
+			out_ptr[i] = in_ptr[i] * inv_rms;
+		}
+	}
+	return out;
+}
+
+
+
+tensor layernorm(const tensor& t) {
+	tensor out(t.shape());
+	i32 last_dim = t.shape().back();
+	u64 num_rows = t.numel() / last_dim;
+	f32 eps = 1e-6f;
+
+	for (u64 r = 0; r < num_rows; ++r) {
+		u64 offset = r * last_dim;
+		const f32* in_ptr = t.data().data() + offset;
+		f32* out_ptr = out._data.data() + offset;
+
+		// 1. Calculate Mean
+		f32 mean = 0.0f;
+		for (i32 i = 0; i < last_dim; ++i) mean += in_ptr[i];
+		mean /= last_dim;
+
+		// 2. Calculate Variance
+		f32 var = 0.0f;
+		for (i32 i = 0; i < last_dim; ++i) {
+			f32 diff = in_ptr[i] - mean;
+			var += diff * diff;
+		}
+		f32 inv_std = 1.0f / std::sqrt((var / last_dim) + eps);
+
+		// 3. Normalize: (x - mean) * inv_std
+		for (i32 i = 0; i < last_dim; ++i) {
+			out_ptr[i] = (in_ptr[i] - mean) * inv_std;
+		}
+	}
+	return out;
+}
+
+
+
 
 
 }

@@ -2,28 +2,36 @@
 #include "tensor.hpp"
 #include <iostream> 
 #include <chrono> 
-#define ROWS 25*1024
-#define COLS 5*1024
+#define ROWS 128
+#define COLS 768
 #define ITER 10000
+using tensor = bz::tensor;
+namespace nn = bz::nn;
 
 int main(){
+	tensor inputs = tensor::randn({ROWS, COLS});
+	tensor ground_truth = tensor::ones({ROWS, 10});
+	nn::Linear l1(768, 394);
+	nn::Linear l2(394, 192);
+	nn::Linear l3(192, 96);
+	nn::Linear l4(96, 10);
+	
+	auto start = std::chrono::high_resolution_clock::now();
+	tensor out = inputs;
+	out = l1(out);
+	out = l2(out);
+	out = l3(out);
+	out = l4(out);
+	auto end = std::chrono::high_resolution_clock::now();
+	auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+	std::cout << (double)elapsed.count() * 1e-6 << std::endl;
 
-	bz::tensor t1 = bz::tensor::ones({ROWS});
-	bz::tensor t2 = bz::tensor::ones({ROWS});
 
 
-	double time = 0;
-	for(int i = 0; i < ITER; i++){
-		auto start = std::chrono::high_resolution_clock::now(); 
-		bz::gelu(t1);
-		// t1.sigmoid_();
-		auto end = std::chrono::high_resolution_clock::now(); 
-		auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-		
-		time += elapsed.count();
 
-	}
-	std::cout << time/ITER << std::endl;
-	std::cout << t1.at({ROWS - 1}) << std::endl;
+
+
+
+
 	return 0;
 }

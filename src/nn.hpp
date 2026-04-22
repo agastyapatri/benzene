@@ -5,6 +5,8 @@
 #define BZ_NN_HPP
 
 #include "tensor.hpp"
+
+#include <memory> 
 #include <unordered_map>
 namespace bz::nn{
 
@@ -38,6 +40,37 @@ public:
 	std::unordered_map<std::string, const tensor*> state_dict() const override;
 };
 
+
+//	TODO 
+class Embedding: public module{
+private: 
+	u32 _num_embeddings; 
+	u32 _embedding_dim; 
+public: 
+	Embedding() = default; 
+	Embedding(u32 num_embeddings, u32 embedding_dim) : _num_embeddings(num_embeddings), _embedding_dim(embedding_dim){}
+	tensor forward(const tensor& input) const override;
+	std::vector<tensor*> parameters()  override; 
+	std::unordered_map<std::string, const tensor*> state_dict() const override;
+};
+
+
+//	TODO
+class Sequential: public module{
+private: 
+	u32 _num_layers;
+	std::vector<std::unique_ptr<module>> _layers;
+public: 
+	Sequential() = default; 
+	Sequential(std::vector<module> layers);
+	void push_back(const module& layer);
+	void push_back(std::unique_ptr<module> layer);
+	tensor forward(const tensor& input) const override;
+	std::vector<tensor*> parameters()  override; 
+	std::unordered_map<std::string, const tensor*> state_dict() const override;
+
+	u32 num_layers() const {return _num_layers;}
+};
 
 
 

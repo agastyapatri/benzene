@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cfloat>
 #include <initializer_list>
+#include <execution>
 #include <random> 
 #include <cmath>
 #include <openblas/cblas.h> 
@@ -582,9 +583,9 @@ tensor dot(const tensor& inp1, const tensor& inp2){
 }
 
 
-tensor tensor::leakyrelu(f32 negative_slope) const{
-	tensor out(this->_shape);
-	std::transform(this->_data.begin(), this->_data.end(), out._data.begin(), [negative_slope](f32 x)->f32{
+tensor leakyrelu(const tensor& t, f32 negative_slope) {
+	tensor out(t._shape);
+	std::transform(std::execution::par, t.data().begin(), t.data().end(), out._data.begin(), [negative_slope](f32 x)->f32{
 		return (x > 0) ? x : -negative_slope;
 	});
 	return out;
@@ -592,7 +593,7 @@ tensor tensor::leakyrelu(f32 negative_slope) const{
 
 tensor relu(const tensor& t){
 	tensor out(t._shape);
-	std::transform(t._data.begin(), t._data.end(), out._data.begin(), [](f32 x)->f32{
+	std::transform(std::execution::par, t._data.begin(), t._data.end(), out._data.begin(), [](f32 x)->f32{
 		return (x > 0) ? x : 0;
 	});
 	return out;

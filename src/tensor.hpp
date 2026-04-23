@@ -29,6 +29,7 @@ typedef std::vector<double>   vf64;
 
 class tensor; 
 tensor relu(const tensor& t);
+tensor leakyrelu(const tensor& t, f32 negative_slope);
 tensor gelu(const tensor& t);
 tensor sigmoid(const tensor& t);
 tensor matmul(const tensor& inp1, const tensor& inp2);
@@ -137,7 +138,6 @@ public:
 	tensor matmul(const tensor& other) const;
 	tensor rmsnorm() const;
 	tensor layernorm() const;
-	tensor leakyrelu(f32 negative_slope) const;
 
 
 	//	tensor ops; namespace functions 
@@ -146,6 +146,7 @@ public:
 	friend tensor dot(const tensor& inp1, const tensor& inp2);
 	friend tensor operator*(f32 scalar, const tensor& t);
 	friend tensor relu(const tensor& t);
+	friend tensor leakyrelu(const tensor& t, f32 negative_slope);
 	friend tensor gelu(const tensor& t);
 	friend tensor log(const tensor& t) ;
 	friend tensor exp(const tensor& t) ;

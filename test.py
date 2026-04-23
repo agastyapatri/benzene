@@ -1,7 +1,7 @@
 import numpy as np 
 import torch 
 
-rows = 128
+rows = 10240
 cols = 768
 # x = np.random.randn(2,3,4,5)
 if __name__ == "__main__":
@@ -18,6 +18,7 @@ if __name__ == "__main__":
     out = l2(out)
     out = l3(out)
     out = l4(out)
+    out = torch.nn.GELU()(out)
     end = timeit.default_timer()
     print(end - start)
     print(out.shape)

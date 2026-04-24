@@ -1,5 +1,7 @@
 #include "nn.hpp"
 #include "tensor.hpp"
+#include <memory>
+#include <string>
 #include <unordered_map>
 namespace bz::nn{
 
@@ -35,7 +37,42 @@ std::unordered_map<std::string, const tensor*> Linear::state_dict() const {
 }
 
 
+void Sequential::push_back(std::unique_ptr<module> layer){
+	_layers.push_back(std::move(layer));
+	_num_layers++;
+}
 
+
+std::vector<tensor*> Sequential::parameters() {
+    std::vector<tensor*> params;
+	for(const auto& layer: _layers){
+		auto curr_params = layer->parameters();
+		params.insert(params.end(), curr_params.begin(), curr_params.end());
+	}
+	return params;
+} 
+
+std::unordered_map<std::string, const tensor*> Sequential::state_dict() const{
+	std::unordered_map<std::string, const tensor*> sd ;
+	for(u32 i = 0; i < _num_layers; i++){
+		std::string wname = std::to_string(i) + ".weight";
+		std::string bname = std::to_string(i) + ".bias";
+		auto layerdict = _layers[i]->state_dict();
+		sd[wname] = layerdict["weight"];
+		sd[bname] = layerdict["bias"];
+	}
+	return sd;
+}
+
+
+tensor Sequential::forward(const tensor& input) const {
+	tensor out = input;
+	for(const auto& layer: _layers){
+		out = layer->forward(out);
+
+	}
+	return out;
+}
 
 
 

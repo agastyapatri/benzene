@@ -3,5 +3,3 @@
 -Wall 
 -Wextra 
 -Isrc/
-
-

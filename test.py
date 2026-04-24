@@ -1,25 +1,23 @@
 import numpy as np 
 import torch 
 
-rows = 10240
-cols = 768
+rows = 1
+cols = 784
 # x = np.random.randn(2,3,4,5)
 if __name__ == "__main__":
-    x = torch.randn(rows, cols)
-    l1 = torch.nn.Linear(768, 394)
+    l1 = torch.nn.Linear(784, 394)
     l2 = torch.nn.Linear(394, 192)
     l3 = torch.nn.Linear(192, 96)
     l4 = torch.nn.Linear(96, 10)
-    out = x 
 
+    net = torch.nn.Sequential(l1, l2, l3, l4)
+
+    samples: int = 0 
     import timeit
     start = timeit.default_timer()
-    out = l1(out)
-    out = l2(out)
-    out = l3(out)
-    out = l4(out)
-    out = torch.nn.GELU()(out)
+    while(samples < 60000): 
+        x = torch.randn(rows, cols)
+        out = net(x)
+        samples += rows 
     end = timeit.default_timer()
-    print(end - start)
-    print(out.shape)
-
+    print(f"time taken to process the mnist dataset in python: {end - start} seconds")

@@ -6,6 +6,7 @@
 
 #include "tensor.hpp"
 
+#include <initializer_list>
 #include <memory> 
 #include <unordered_map>
 namespace bz::nn{
@@ -61,14 +62,12 @@ private:
 	u32 _num_layers;
 	std::vector<std::unique_ptr<module>> _layers;
 public: 
-	Sequential() = default; 
-	Sequential(std::vector<module> layers);
-	void push_back(const module& layer);
+	Sequential(): _num_layers(0){}; 
+	// void push_back(const module& layer);
 	void push_back(std::unique_ptr<module> layer);
 	tensor forward(const tensor& input) const override;
 	std::vector<tensor*> parameters()  override; 
 	std::unordered_map<std::string, const tensor*> state_dict() const override;
-
 	u32 num_layers() const {return _num_layers;}
 };
 

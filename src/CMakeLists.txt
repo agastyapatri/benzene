@@ -1,1 +1,1 @@
-add_library(BZSRC  tensor.cpp)
+add_library(BZSRC  tensor.cpp nn.cpp)

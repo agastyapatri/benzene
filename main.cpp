@@ -3,6 +3,7 @@
 #include <chrono>
 #include <iostream> 
 #include <memory>
+#include <string>
 #define ROWS 1
 #define COLS 784
 #define ITER 10000
@@ -19,18 +20,15 @@ int main(){
 	net.push_back(std::make_unique<nn::Linear>(10, 1));
 
 
-
-
-	int samples = 0; 
-	auto start = std::chrono::high_resolution_clock::now();
-	while(samples <= 60000){
-		tensor inputs = tensor::randn({ROWS, COLS});
-		tensor out = net.forward(inputs);
-		samples += ROWS;
+	for(bz::u32 i = 0; i < net.num_layers(); i++){
+		std::string wname = std::to_string(i) +  ".weight";
+		std::string bname = std::to_string(i) +  ".bias";
+		std::cout << wname << ": " << net.state_dict()[wname]->shape()[0] << " " <<   net.state_dict()[wname]->shape()[1] << std::endl;
+		std::cout << bname << ": " << net.state_dict()[bname]->shape()[0] << " " <<   net.state_dict()[bname]->shape()[1] << std::endl;
 	}
-	auto end = std::chrono::high_resolution_clock::now();
-	auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-	std::cout << "time taken to process the MNIST dataset for a single epoch: " << elapsed.count() * 1e-6 << " seconds" << std::endl;
-	std::cout << samples << std::endl;
+
+
+
+
 }
 

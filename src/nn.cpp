@@ -39,7 +39,6 @@ std::unordered_map<std::string, const tensor*> Linear::state_dict() const {
 
 void Sequential::push_back(std::unique_ptr<module> layer){
 	_layers.push_back(std::move(layer));
-	_num_layers++;
 }
 
 
@@ -54,12 +53,11 @@ std::vector<tensor*> Sequential::parameters() {
 
 std::unordered_map<std::string, const tensor*> Sequential::state_dict() const{
 	std::unordered_map<std::string, const tensor*> sd ;
-	for(u32 i = 0; i < _num_layers; i++){
-		std::string wname = std::to_string(i) + ".weight";
-		std::string bname = std::to_string(i) + ".bias";
-		auto layerdict = _layers[i]->state_dict();
-		sd[wname] = layerdict["weight"];
-		sd[bname] = layerdict["bias"];
+	for(u32 i = 0; i < _layers.size(); i++){
+		auto layer_sd = _layers[i]->state_dict();
+		for(const auto& [name, ptr] : layer_sd){
+			sd[std::to_string(i) + "." + name] = ptr;
+		}
 	}
 	return sd;
 }
@@ -73,6 +71,13 @@ tensor Sequential::forward(const tensor& input) const {
 	}
 	return out;
 }
+
+
+
+
+
+
+
 
 
 

@@ -37,7 +37,7 @@ std::unordered_map<std::string, const tensor*> Linear::state_dict() const {
 }
 
 
-void Sequential::push_back(std::unique_ptr<module> layer){
+void Sequential::push_back(std::unique_ptr<Module> layer){
 	_layers.push_back(std::move(layer));
 }
 
@@ -73,6 +73,23 @@ tensor Sequential::forward(const tensor& input) const {
 }
 
 
+
+
+std::unique_ptr<Linear> make_linear(i32 in_shape, i32 out_shape, bool bias){
+	return std::make_unique<nn::Linear>(in_shape, out_shape, bias);
+}
+
+std::unique_ptr<ReLU> make_relu(){
+	return std::make_unique<nn::ReLU>();
+}
+
+std::unique_ptr<GELU> make_gelu(){
+	return std::make_unique<nn::GELU>();
+}
+
+std::unique_ptr<Softmax> make_softmax(i32 dim){
+	return std::make_unique<nn::Softmax>(dim);
+}
 
 
 

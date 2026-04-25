@@ -9,15 +9,20 @@
 #include <unordered_map>
 namespace bz::nn{
 
-class module;
+class Module;
 class Linear; 
 class Embedding;
 class Sequential;
+class ReLU; 
+class GELU; 
+class Softmax; 
+class LayerNorm;
 
 
-class module{
+
+class Module{
 public: 
-	virtual ~module() = default; 
+	virtual ~Module() = default; 
 	virtual tensor forward(const tensor& input) const = 0;
 	virtual std::vector<tensor*> parameters() {return {};} 
 	virtual std::unordered_map<std::string, const tensor*> state_dict() const {return {};}
@@ -25,7 +30,41 @@ public:
 };
 
 
-class Linear: public module{
+class ReLU : public Module {
+public: 
+	tensor forward(const tensor& input) const override {return bz::relu(input);} 
+	std::vector<tensor*> parameters() override {return {};};
+	std::unordered_map<std::string, const tensor*> state_dict() const override {return {};}
+};
+
+class GELU : public Module {
+public: 
+	tensor forward(const tensor& input) const override {return bz::gelu(input);} 
+	std::vector<tensor*> parameters() override {return {};};
+	std::unordered_map<std::string, const tensor*> state_dict() const override {return {};}
+};
+
+class Softmax : public Module {
+private: 
+	i32 _dim;
+public: 
+	Softmax(i32 dim = -1) : _dim(dim) {}
+	tensor forward(const tensor& input) const override {return bz::softmax(input, _dim);} 
+	std::vector<tensor*> parameters() override {return {};}
+	std::unordered_map<std::string, const tensor*> state_dict() const override {return {};}
+};
+
+
+
+
+
+
+
+
+
+
+
+class Linear: public Module{
 private: 
 	tensor _weight;
 	tensor _bias;
@@ -40,13 +79,13 @@ public:
 };
 
 
-class Sequential: public module{
+class Sequential: public Module{
 private: 
-	std::vector<std::unique_ptr<module>> _layers;
+	std::vector<std::unique_ptr<Module>> _layers;
 public: 
 	Sequential() = default; 
-	// void push_back(const module& layer);
-	void push_back(std::unique_ptr<module> layer);
+	// void push_back(const Module& layer);
+	void push_back(std::unique_ptr<Module> layer);
 	tensor forward(const tensor& input) const override;
 	std::vector<tensor*> parameters()  override; 
 	std::unordered_map<std::string, const tensor*> state_dict() const override;
@@ -55,7 +94,7 @@ public:
 
 
 //	TODO 
-class Embedding: public module{
+class Embedding: public Module{
 private: 
 	u32 _num_embeddings; 
 	u32 _embedding_dim; 
@@ -70,6 +109,10 @@ public:
 
 
 
+std::unique_ptr<Linear>  make_linear(i32 in_shape, i32 out_shape, bool bias=true);
+std::unique_ptr<ReLU>    make_relu();
+std::unique_ptr<GELU>    make_gelu();
+std::unique_ptr<Softmax> make_softmax(i32 dim = -1);
 
 
 

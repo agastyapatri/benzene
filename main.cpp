@@ -11,21 +11,27 @@ using tensor = bz::tensor;
 namespace nn = bz::nn;
 
 int main(){
+	tensor::manual_seed(0);
+	tensor inputs = tensor::randn({ROWS, COLS});
 	tensor labels = tensor::ones({ROWS, 1});
 
 	nn::Sequential net;
-	net.push_back(std::make_unique<nn::Linear>(784, 196));
-	net.push_back(std::make_unique<nn::Linear>(196, 98));
-	net.push_back(std::make_unique<nn::Linear>(98, 10));
-	net.push_back(std::make_unique<nn::Linear>(10, 1));
+	net.push_back(nn::make_linear(COLS, COLS/2));
+	net.push_back(nn::make_gelu());
+	net.push_back(nn::make_linear(COLS/2, COLS/4));
+	net.push_back(nn::make_gelu());
+	net.push_back(nn::make_linear(COLS/4, 10));
+	net.push_back(nn::make_gelu());
+	net.push_back(nn::make_linear(10, 1));
+	net.push_back(nn::make_gelu());
+	net.push_back(nn::make_softmax());
 
 
-	for(bz::u32 i = 0; i < net.num_layers(); i++){
-		std::string wname = std::to_string(i) +  ".weight";
-		std::string bname = std::to_string(i) +  ".bias";
-		std::cout << wname << ": " << net.state_dict()[wname]->shape()[0] << " " <<   net.state_dict()[wname]->shape()[1] << std::endl;
-		std::cout << bname << ": " << net.state_dict()[bname]->shape()[0] << " " <<   net.state_dict()[bname]->shape()[1] << std::endl;
-	}
+	tensor out = net(inputs);
+	std::cout << out << std::endl;
+
+
+
 
 
 

@@ -11,11 +11,10 @@ using tensor = bz::tensor;
 namespace nn = bz::nn;
 
 int main(){
-	tensor::manual_seed(0);
-	tensor a = tensor::randn({10, 10}); //	weight tensor
-	bz::vi32 idxs({1,2,3,4});
-	std::cout << a << std::endl;
-	std::cout << a.gather(idxs) << std::endl;
+	tensor t = tensor::randn({5,5,5});
+	std::cout << t << std::endl << std::endl;
+	tensor t2 = tensor::ones({5});
+	std::cout << t + t2 << std::endl;
 
 
 

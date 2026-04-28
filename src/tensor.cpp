@@ -210,8 +210,28 @@ tensor tensor::operator+(const tensor& other) const {
 		}
 		return out;
 	}
+
+	// Generalized (..., N) + (N) case
+	if (other._ndim == 1 && this->_shape.back() == other._shape[0]) {
+		i32 N = other._shape[0];
+		i32 total_rows = this->_numel / N; 
+		
+		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
+		
+		#pragma omp parallel for
+		for (i32 i = 0; i < total_rows; i++) {
+			cblas_saxpy(
+				N,
+				1.0f,
+				other._data.data(), 1, 
+				out._data.data() + (i * N), 1
+			);
+		}
+		return out;
+	}
+
+
 	if(other._numel == 1){
-		tensor out(this->_shape);
 		float scalar = other._data[0];
 		#pragma omp parallel for
 		for(u64 i = 0; i < _numel; i++)
@@ -292,8 +312,29 @@ tensor tensor::operator-(const tensor& other) const {
 		}
 		return out;
 	}
+
+	// Generalized (..., N) + (N) case
+	if (other._ndim == 1 && this->_shape.back() == other._shape[0]) {
+		i32 N = other._shape[0];
+		i32 total_rows = this->_numel / N; 
+		
+		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
+		
+		#pragma omp parallel for
+		for (i32 i = 0; i < total_rows; i++) {
+			cblas_saxpy(
+				N,
+				-1.0f,
+				other._data.data(), 1, 
+				out._data.data() + (i * N), 1
+			);
+		}
+		return out;
+	}
+
+
+
 	if(other._numel == 1){
-		tensor out(this->_shape);
 		float scalar = other._data[0];
 		#pragma omp parallel for
 		for(u64 i = 0; i < _numel; i++)
@@ -308,14 +349,12 @@ tensor tensor::operator-(const tensor& other) const {
 }
 
 tensor tensor::operator*(const tensor& other) const {
-	// assert(this->_shape == other._shape);
 	auto outshape = broadcast_shapes(this->_shape, other._shape);
 	if(!outshape){
 		throw std::runtime_error("Tensors are not broadcast compatible.");
 	}
 	tensor out(outshape.value());
 
-	//	if both shapes are equal, simply add elementwise.
 	if(this->_shape == other._shape){
 		for(u64 i = 0; i < this->_numel; i++)
 			out._data[i] = this->_data[i] * other._data[i];
@@ -331,6 +370,19 @@ tensor tensor::operator*(const tensor& other) const {
 				out._data[i * N + j] = this->_data[i * N + j] * other._data[j]; 
 			}
 		}
+		return out;
+	}
+
+	// Generalized (..., N) + (N) case
+	if (other._ndim == 1 && this->_shape.back() == other._shape[0]) {
+		i32 N = other._shape[0];
+		i32 total_rows = this->_numel / N; 
+		
+		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
+		
+		#pragma omp parallel for
+		for(u64 i = 0; i < _numel; i++)
+			out._data[i] = this->_data[i] * other._data[i];
 		return out;
 	}
 
@@ -784,7 +836,6 @@ tensor layernorm(const tensor& t) {
 	return out;
 }
 
-//	TODO
 tensor tensor::gather(const tensor& indices, i32 dim) const {
 	assert(dim <= _ndim);
 	if(_ndim != 2){
@@ -797,12 +848,14 @@ tensor tensor::gather(const tensor& indices, i32 dim) const {
 
 	for(i32 i = 0; i < nrows; i++){
 		i32 current_index = indices._data[i];
+		assert(current_index >= 0 && current_index <= _shape[0]);
 		const float* source_row_start = _data.data() + (current_index * ncols);
 		float* destination_row = out._data.data() + (i * ncols);
 		std::copy(source_row_start, source_row_start + ncols, destination_row);
 	}
 	return out;
 }
+
 tensor tensor::gather(const vi32 indices, i32 dim) const {
 	assert(dim <= _ndim);
 	if(_ndim != 2){
@@ -813,6 +866,7 @@ tensor tensor::gather(const vi32 indices, i32 dim) const {
 	tensor out({(i32)nrows, (i32)ncols});
 	for(i32 i = 0; i < nrows; i++){
 		i32 current_index = indices.data()[i];
+		assert(current_index >= 0 && current_index <= _shape[0]);
 		const float* source_row_start = _data.data() + (current_index * ncols);
 		float* destination_row = out._data.data() + (i * ncols);
 		std::copy(source_row_start, source_row_start + ncols, destination_row);

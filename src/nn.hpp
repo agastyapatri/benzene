@@ -93,7 +93,6 @@ public:
 };
 
 
-//	TODO 
 class Embedding: public Module{
 private: 
 	i32 _num_embeddings; 
@@ -110,10 +109,17 @@ public:
 
 
 
-std::unique_ptr<Linear>  make_linear(i32 in_shape, i32 out_shape, bool bias=true);
-std::unique_ptr<ReLU>    make_relu();
-std::unique_ptr<GELU>    make_gelu();
-std::unique_ptr<Softmax> make_softmax(i32 dim = -1);
+
+
+
+
+//	nn::Module factory
+
+std::unique_ptr<Linear>    make_linear(i32 in_shape, i32 out_shape, bool bias=true);
+std::unique_ptr<ReLU>      make_relu();
+std::unique_ptr<GELU>      make_gelu();
+std::unique_ptr<Softmax>   make_softmax(i32 dim = -1);
+std::unique_ptr<Embedding> make_embedding();
 
 
 

@@ -66,40 +66,50 @@ tensor Sequential::forward(const tensor& input) const {
 	return out;
 }
 
-// Embedding::Embedding(const i32 num_embeddings, const i32 embedding_dim){
-// 	_num_embeddings = num_embeddings; 
-// 	_embedding_dim = embedding_dim; 
-// 	_weight = tensor::randn({num_embeddings, embedding_dim});
-// }
-// //
-// tensor Embedding::forward(const tensor& input) const{
-// 	i32 _seq_len = input.numel();
-// 	tensor output({_seq_len, _embedding_dim});
-// 	vf32 _out(_seq_len * _embedding_dim, 0.0f);
-// 	for(i32 i = 0; i < input.size(); i++){
-//
-// 	}
-//
-//
-// }
+Embedding::Embedding(const i32 num_embeddings, const i32 embedding_dim){
+	_num_embeddings = num_embeddings; 
+	_embedding_dim = embedding_dim; 
+	_weight = tensor::rand_normal({num_embeddings, embedding_dim}, 0, 0.02);
+}
+
+tensor Embedding::forward(const tensor& input) const{
+	tensor output = _weight.gather(input);
+	return output;
+}
+
+std::unordered_map<std::string, const tensor*> Embedding::state_dict() const {
+	std::unordered_map<std::string, const tensor*> sd ;
+	sd["weight"] = &_weight;
+	return sd;
+}
+
+std::vector<tensor*> Embedding::parameters(){
+    std::vector<tensor*> params;
+    params.push_back(&_weight);
+    return params;
+}
 
 
 std::unique_ptr<Linear> make_linear(i32 in_shape, i32 out_shape, bool bias){
-	return std::make_unique<nn::Linear>(in_shape, out_shape, bias);
+	return std::make_unique<Linear>(in_shape, out_shape, bias);
 }
 
 std::unique_ptr<ReLU> make_relu(){
-	return std::make_unique<nn::ReLU>();
+	return std::make_unique<ReLU>();
 }
 
 std::unique_ptr<GELU> make_gelu(){
-	return std::make_unique<nn::GELU>();
+	return std::make_unique<GELU>();
 }
 
 std::unique_ptr<Softmax> make_softmax(i32 dim){
-	return std::make_unique<nn::Softmax>(dim);
+	return std::make_unique<Softmax>(dim);
 }
 
+
+std::unique_ptr<Embedding> make_embedding(){
+	return std::make_unique<Embedding>();
+}
 
 
 

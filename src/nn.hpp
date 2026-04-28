@@ -7,6 +7,7 @@
 
 #include <memory> 
 #include <unordered_map>
+
 namespace bz::nn{
 
 class Module;
@@ -84,8 +85,7 @@ private:
 	std::vector<std::unique_ptr<Module>> _layers;
 public: 
 	Sequential() = default; 
-	// void push_back(const Module& layer);
-	void push_back(std::unique_ptr<Module> layer);
+	void push_back(std::unique_ptr<Module> layer) {return _layers.push_back(std::move(layer));}
 	tensor forward(const tensor& input) const override;
 	std::vector<tensor*> parameters()  override; 
 	std::unordered_map<std::string, const tensor*> state_dict() const override;
@@ -96,11 +96,12 @@ public:
 //	TODO 
 class Embedding: public Module{
 private: 
-	u32 _num_embeddings; 
-	u32 _embedding_dim; 
+	i32 _num_embeddings; 
+	i32 _embedding_dim; 
+	tensor _weight;
 public: 
 	Embedding() = default; 
-	Embedding(u32 num_embeddings, u32 embedding_dim) : _num_embeddings(num_embeddings), _embedding_dim(embedding_dim){}
+	Embedding(const i32 num_embeddings, const i32 embedding_dim);
 	tensor forward(const tensor& input) const override;
 	std::vector<tensor*> parameters()  override; 
 	std::unordered_map<std::string, const tensor*> state_dict() const override;
@@ -113,6 +114,8 @@ std::unique_ptr<Linear>  make_linear(i32 in_shape, i32 out_shape, bool bias=true
 std::unique_ptr<ReLU>    make_relu();
 std::unique_ptr<GELU>    make_gelu();
 std::unique_ptr<Softmax> make_softmax(i32 dim = -1);
+
+
 
 
 

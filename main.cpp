@@ -12,24 +12,10 @@ namespace nn = bz::nn;
 
 int main(){
 	tensor::manual_seed(0);
-	tensor inputs = tensor::randn({ROWS, COLS});
-	tensor labels = tensor::ones({ROWS, 1});
-
-	nn::Sequential net;
-	net.push_back(nn::make_linear(COLS, COLS/2));
-	net.push_back(nn::make_gelu());
-	net.push_back(nn::make_linear(COLS/2, COLS/4));
-	net.push_back(nn::make_gelu());
-	net.push_back(nn::make_linear(COLS/4, 10));
-	net.push_back(nn::make_gelu());
-	net.push_back(nn::make_linear(10, 1));
-	net.push_back(nn::make_gelu());
-	net.push_back(nn::make_softmax());
-
-
-	tensor out = net(inputs);
-	std::cout << out << std::endl;
-
+	tensor a = tensor::randn({10, 10}); //	weight tensor
+	bz::vi32 idxs({1,2,3,4});
+	std::cout << a << std::endl;
+	std::cout << a.gather(idxs) << std::endl;
 
 
 

@@ -95,6 +95,13 @@ bool tensor::operator==(const tensor& other) const {
 	return true; 
 }
 
+tensor tensor::operator[](const vi32 idxs) const {
+	return tensor({1}, {this->at(idxs)});
+}
+
+
+
+
 bool tensor::operator!=(const tensor& other) const {
 	return !(*this == other);
 }
@@ -777,8 +784,41 @@ tensor layernorm(const tensor& t) {
 	return out;
 }
 
+//	TODO
+tensor tensor::gather(const tensor& indices, i32 dim) const {
+	assert(dim <= _ndim);
+	if(_ndim != 2){
+		throw std::runtime_error("tensor::gather is currently only supported when _ndim == 2");
+	}
 
+	i32 nrows = indices._numel;
+	i32 ncols = _shape[1];
+	tensor out({(i32)nrows, (i32)ncols});
 
+	for(i32 i = 0; i < nrows; i++){
+		i32 current_index = indices._data[i];
+		const float* source_row_start = _data.data() + (current_index * ncols);
+		float* destination_row = out._data.data() + (i * ncols);
+		std::copy(source_row_start, source_row_start + ncols, destination_row);
+	}
+	return out;
+}
+tensor tensor::gather(const vi32 indices, i32 dim) const {
+	assert(dim <= _ndim);
+	if(_ndim != 2){
+		throw std::runtime_error("tensor::gather is currently only supported when _ndim == 2");
+	}
+	i32 nrows = indices.size();
+	i32 ncols = _shape[1];
+	tensor out({(i32)nrows, (i32)ncols});
+	for(i32 i = 0; i < nrows; i++){
+		i32 current_index = indices.data()[i];
+		const float* source_row_start = _data.data() + (current_index * ncols);
+		float* destination_row = out._data.data() + (i * ncols);
+		std::copy(source_row_start, source_row_start + ncols, destination_row);
+	}
+	return out;
+}
 
 
 }

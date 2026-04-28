@@ -97,6 +97,7 @@ public:
 	tensor operator/(f32 scalar) const;
 	tensor operator+(f32 scalar) const;
 
+	tensor operator[](const vi32 idxs) const ;
 	tensor operator-(f32 scalar) const;
 	tensor pow(const f32 exponent) const; 
 	void   pow_(const f32 exponent);
@@ -154,14 +155,16 @@ public:
 	friend tensor cos(const tensor& t) ;
 	friend tensor tanh(const tensor& t); 
 	friend tensor sigmoid(const tensor& t);
-
 	friend tensor transpose(const tensor& t, u32 dim0, u32 dim1);
-
-
 	friend tensor operator+(f32 scalar, const tensor& t);
 	friend tensor softmax(const tensor& t, i32 dim);
 	friend tensor rmsnorm(const tensor& t);
 	friend tensor layernorm(const tensor& t);
+
+
+	tensor gather(const tensor& indices, i32 dim = 0) const ;
+	tensor gather(const vi32 indices, i32 dim = 0) const ;
+
 };
 
 

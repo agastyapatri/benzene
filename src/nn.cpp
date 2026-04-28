@@ -37,11 +37,6 @@ std::unordered_map<std::string, const tensor*> Linear::state_dict() const {
 }
 
 
-void Sequential::push_back(std::unique_ptr<Module> layer){
-	_layers.push_back(std::move(layer));
-}
-
-
 std::vector<tensor*> Sequential::parameters() {
     std::vector<tensor*> params;
 	for(const auto& layer: _layers){
@@ -62,7 +57,6 @@ std::unordered_map<std::string, const tensor*> Sequential::state_dict() const{
 	return sd;
 }
 
-
 tensor Sequential::forward(const tensor& input) const {
 	tensor out = input;
 	for(const auto& layer: _layers){
@@ -72,7 +66,22 @@ tensor Sequential::forward(const tensor& input) const {
 	return out;
 }
 
-
+// Embedding::Embedding(const i32 num_embeddings, const i32 embedding_dim){
+// 	_num_embeddings = num_embeddings; 
+// 	_embedding_dim = embedding_dim; 
+// 	_weight = tensor::randn({num_embeddings, embedding_dim});
+// }
+// //
+// tensor Embedding::forward(const tensor& input) const{
+// 	i32 _seq_len = input.numel();
+// 	tensor output({_seq_len, _embedding_dim});
+// 	vf32 _out(_seq_len * _embedding_dim, 0.0f);
+// 	for(i32 i = 0; i < input.size(); i++){
+//
+// 	}
+//
+//
+// }
 
 
 std::unique_ptr<Linear> make_linear(i32 in_shape, i32 out_shape, bool bias){

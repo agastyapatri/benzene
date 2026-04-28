@@ -6,5 +6,6 @@ cols = 784
 # x = np.random.randn(2,3,4,5)
 if __name__ == "__main__":
     x = torch.randn(5,5,5)
-    index=  torch.Tensor([0], dtype = torch.int32)
-    y = torch.gather(x, 0, index)
+    x = x.unsqueeze(1)
+    x = x.unsqueeze(1)
+    print(x.shape);

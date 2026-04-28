@@ -22,14 +22,13 @@ tensor::tensor(vi32 shape){
 	_data.resize(_numel, 0.0f);
 }
 
-
-tensor tensor::eye(const i32 size){
-	tensor out({size, size});
-	for(i32 i = 0; i < size; i++){
-		out._data[i*size + i] = 1;
-	}
-	return out;
+void tensor::unsqueeze(i32 dim){
+	assert(dim >= 0 && dim < _ndim + 1);
+	_shape.insert(_shape.begin() + dim, 1);
+	_numel = _shape.size();
+	this->compute_strides();
 }
+
 
 void tensor::compute_strides(){
 	_strides.resize(_ndim, 1);
@@ -569,28 +568,53 @@ tensor tensor::mean (u32 axis) const {
 	return out / divisor;
 }
 
-tensor tensor::matmul(const tensor& other) const{
-	assert((this->_ndim == 2) && (other._ndim == 2));
-	assert(this->_shape[1] == other._shape[0]);
-	i32 M = this->_shape[0];		// this->rows
-	i32 N = other._shape[1];		// other col
-	i32 K = this->_shape[1];		// this->cols
-	tensor out({M, N});
-	cblas_sgemm(
-		CblasRowMajor, CblasNoTrans, CblasNoTrans, 
-		M, N, K, 
-		1.0f, 
-		this->_data.data(), K, 
-		other._data.data(), N,
-		0.0f, 
-		out._data.data(), N
-	);
-	return out;
-}
 
 tensor matmul(const tensor& inp1, const tensor& inp2){
-	assert((inp1._ndim == 2) && (inp2._ndim == 2));
+	tensor out;
+	//	[M, n] x [N, O] = [M x O]
+	if(inp1._ndim == 2 && inp2._ndim == 2){
+		return mm(inp1, inp2);
+	}
+	//	[M, N] x [N] = [M, N]
+	if(inp1._ndim == 2 && inp2._ndim == 1){
+		return mv(inp1, inp2);
+	}
+	//	[N] x [N] = 1
+	if(inp1._ndim == 1 && inp2._ndim == 1){
+		return dot(inp1, inp2);
+	}
+	// [A, B, C] x [C, D] = [A, B, D]
+	if(inp1._ndim == 3 && inp2._ndim == 2){
+		i32 A = inp1._shape[0];
+		i32 B = inp1._shape[1];
+		i32 C = inp1._shape[2];
+		i32 M = A * B; 
+		i32 K = inp1._shape[1];
+		i32 N = inp2._shape[1];
+		assert(C == inp2._shape[0]);
+		i32 D = inp2._shape[1];
+		tensor out({A, B, D});
+		cblas_sgemm(
+			CblasRowMajor, CblasNoTrans, CblasNoTrans,
+			M, N, K, 
+			1.0f, 
+			inp1._data.data(), K, 
+			inp2._data.data(), N, 
+			0.0f, 
+			out._data.data(), N
+			);
+		return out;
+
+	}
+	//	TODO: [B, H, M, N] x [B, H, N, K]	
+	// if(inp2._ndim >= 3 && inp2._ndim >= 3){};
+	throw std::runtime_error("Provided bz::tensor dimensions not handled yet");
+}
+
+
+tensor mm(const tensor& inp1, const tensor& inp2){
 	assert(inp1._shape[1] == inp2._shape[0]);
+
 	i32 M = inp1._shape[0];		// inp1.rows
 	i32 N = inp2._shape[1];		// inp2.col
 	i32 K = inp1._shape[1];		// inp1.cols
@@ -605,9 +629,25 @@ tensor matmul(const tensor& inp1, const tensor& inp2){
 		out._data.data(), N
 	);
 	return out;
+
 }
 
-tensor mat_vec_mul(const tensor& inp1, const tensor& inp2){
+tensor dot(const tensor& inp1, const tensor& inp2){
+	assert(inp1._shape[0] == inp2._shape[0]);
+	i32 N = inp1._shape[0];
+	tensor out({1});
+	f32 res = cblas_sdot(
+		N,
+		inp1._data.data(), 1, 
+		inp2._data.data(), 1 
+	);
+	out.at({0}) = res;
+	return out;
+}
+
+
+
+tensor mv(const tensor& inp1, const tensor& inp2){
 	assert(inp1._ndim == 2);
 	assert(inp2._ndim == 1);
 	assert(inp1._shape[1] == inp2._shape[0]);
@@ -627,19 +667,6 @@ tensor mat_vec_mul(const tensor& inp1, const tensor& inp2){
 	return out;
 }
 
-tensor dot(const tensor& inp1, const tensor& inp2){
-	assert(inp1._ndim == 1 && inp2._ndim == 1);
-	assert(inp1._shape[0] == inp2._shape[0]);
-	i32 N = inp1._shape[0];
-	tensor out({1});
-	f32 res = cblas_sdot(
-		N,
-		inp1._data.data(), 1, 
-		inp2._data.data(), 1 
-	);
-	out.at({0}) = res;
-	return out;
-}
 
 
 tensor leakyrelu(const tensor& t, f32 negative_slope) {

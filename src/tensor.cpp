@@ -22,9 +22,8 @@ tensor::tensor(vi32 shape){
 	_data.resize(_numel, 0.0f);
 }
 
-void tensor::unsqueeze(i32 dim){
-	assert(dim >= 0 && dim < _ndim + 1);
-	_shape.insert(_shape.begin() + dim, 1);
+void tensor::unsqueeze(){
+	_shape.insert(_shape.begin(), 1);
 	_numel = _shape.size();
 	this->compute_strides();
 }
@@ -157,6 +156,7 @@ std::ostream& operator<<(std::ostream& os, const tensor& t){
 
 
 void tensor::fill(float value){
+	#pragma omp parallel for
 	for(u64 i = 0; i < _numel; i++)
 		_data[i] = value;
 }
@@ -575,7 +575,7 @@ tensor matmul(const tensor& inp1, const tensor& inp2){
 	if(inp1._ndim == 2 && inp2._ndim == 2){
 		return mm(inp1, inp2);
 	}
-	//	[M, N] x [N] = [M, N]
+	//	[M, N] x [N] = [M]
 	if(inp1._ndim == 2 && inp2._ndim == 1){
 		return mv(inp1, inp2);
 	}
@@ -583,15 +583,16 @@ tensor matmul(const tensor& inp1, const tensor& inp2){
 	if(inp1._ndim == 1 && inp2._ndim == 1){
 		return dot(inp1, inp2);
 	}
+
 	// [A, B, C] x [C, D] = [A, B, D]
 	if(inp1._ndim == 3 && inp2._ndim == 2){
+		assert(inp1._shape.back() == inp2._shape[0]);
 		i32 A = inp1._shape[0];
 		i32 B = inp1._shape[1];
-		i32 C = inp1._shape[2];
 		i32 M = A * B; 
-		i32 K = inp1._shape[1];
+		i32 K = inp1._shape[2];
 		i32 N = inp2._shape[1];
-		assert(C == inp2._shape[0]);
+		assert(K == inp2._shape[0]);
 		i32 D = inp2._shape[1];
 		tensor out({A, B, D});
 		cblas_sgemm(
@@ -604,12 +605,46 @@ tensor matmul(const tensor& inp1, const tensor& inp2){
 			out._data.data(), N
 			);
 		return out;
-
 	}
-	//	TODO: [B, H, M, N] x [B, H, N, K]	
-	// if(inp2._ndim >= 3 && inp2._ndim >= 3){};
+
+	//	The general case; all dimensions up to the last two are flattened. 
+	//	Eg: [B, H, M, K] x [B, H, K, N] = [B, H, M, N]	
+	if(inp1._ndim >= 3 && inp2._ndim >= 3){
+		for(i32 i = 0; i < inp1._ndim - 2; i++)
+			assert(inp1._shape[i] == inp2._shape[i]);
+		assert(inp1._shape[inp1._ndim - 1] == inp2._shape[inp2._ndim - 2]);
+		i32 K = inp1._shape.back();
+		i32 N = inp2._shape.back();
+		i32 M = inp1._shape[inp1._ndim - 2];
+		vi32 out_shape = inp1._shape;
+		out_shape[out_shape.size() - 1] = N;
+		tensor out(out_shape);
+		u32 stride1 = M * K;
+		u32 stride2 = K * N; 
+		u32 stride3 = M * N;
+		u32 batch_count = (u32)inp1._numel / stride1;
+		const float* inp1_ptr = inp1._data.data(); 
+		const float* inp2_ptr = inp2._data.data(); 
+		float* out_ptr = out._data.data();
+		#pragma omp parallel for
+		for(u64 i = 0; i < batch_count; i++){
+			cblas_sgemm(
+				CblasRowMajor, CblasNoTrans, CblasNoTrans,
+				M, N, K, 
+				1.0f, 
+				inp1_ptr + (i * stride1), K, 
+				inp2_ptr + (i * stride2), N, 
+				0.0f, 
+				out_ptr + (i * stride3), N
+			);
+		}
+		return out;
+	} 
+	
 	throw std::runtime_error("Provided bz::tensor dimensions not handled yet");
 }
+
+
 
 
 tensor mm(const tensor& inp1, const tensor& inp2){
@@ -901,5 +936,17 @@ tensor tensor::gather(const vi32 indices, i32 dim) const {
 	return out;
 }
 
+
+tensor unsqueeze(const tensor& t){
+	tensor out;
+	out._data.resize(t._data.size());
+	std::copy(t._data.begin(), t._data.end(), out._data.begin());
+	out._numel = t._numel;
+	out._shape.resize(t._ndim + 1, 1);
+	std::copy(t._shape.begin(), t._shape.end(), out._shape.begin() + 1);
+	out._ndim = out._shape.size();
+	out.compute_strides();
+	return out;
+}
 
 }

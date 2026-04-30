@@ -40,7 +40,9 @@ tensor tanh(const tensor& t);
 tensor softmax(const tensor& t, i32 dim);
 tensor rmsnorm(const tensor& t);
 tensor layernorm(const tensor& t);
+tensor unsqueeze(const tensor& t);
 tensor transpose(const tensor& t, u32 dim0, u32 dim1);
+
 
 
 tensor matmul(const tensor& inp1, const tensor& inp2);
@@ -144,15 +146,16 @@ public:
 	tensor layernorm() const;
 
 
-	//	tensor ops; namespace functions 
+	//	tensor tensor multiplications
 	friend tensor matmul(const tensor& inp1, const tensor& inp2);
 	friend tensor mm(const tensor& inp1, const tensor& inp2);
-
-
-
-
+	friend tensor bmm(const tensor& inp1, const tensor& inp2);
 	friend tensor mv(const tensor& inp1, const tensor& inp2);
 	friend tensor dot(const tensor& inp1, const tensor& inp2);
+
+
+
+
 	friend tensor operator*(f32 scalar, const tensor& t);
 	friend tensor relu(const tensor& t);
 	friend tensor leakyrelu(const tensor& t, f32 negative_slope);
@@ -169,14 +172,12 @@ public:
 	friend tensor rmsnorm(const tensor& t);
 	friend tensor layernorm(const tensor& t);
 
+	friend tensor unsqueeze(const tensor& t);
 
 	//	manipulations? 
 	tensor gather(const tensor& indices, i32 dim = 0) const ;
 	tensor gather(const vi32 indices, i32 dim = 0) const ;
-	void unsqueeze(i32 dim = 0);
-
-
-
+	void unsqueeze();
 
 };
 

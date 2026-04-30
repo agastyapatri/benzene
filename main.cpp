@@ -5,14 +5,13 @@
 using tensor = bz::tensor;
 
 int main(){
-	tensor t1 = tensor::randn({5,5,5});
-	tensor t2 = tensor::randn({5,2,3});
+	tensor t1 = tensor::randn({10,11,12,13,14});
+	tensor t2 = tensor::randn({10,11,12,14,15});
 	tensor t3 = bz::matmul(t1, t2);
-	std::cout << t3 << std::endl;
-
-
-
-
-
+	for(auto i : t3.shape())
+		std::cout << i << " ";
+	std::cout << std::endl;
+	std::cout << t2.numel() << std::endl;
 }
+
 

@@ -14,7 +14,7 @@ set(SOURCES
 	src/tensor.cpp 
 	src/nn.cpp
 )
-add_compile_options(-O3 -ffast-math -march=native -fopenmp)  
+add_compile_options(-O3  -march=native -fopenmp)  
 add_executable(benzene main.cpp ${SOURCES})
 
 #	include directories: this is crucial

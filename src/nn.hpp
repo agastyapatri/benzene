@@ -34,15 +34,11 @@ public:
 class ReLU : public Module {
 public: 
 	tensor forward(const tensor& input) const override {return bz::relu(input);} 
-	std::vector<tensor*> parameters() override {return {};};
-	std::unordered_map<std::string, const tensor*> state_dict() const override {return {};}
 };
 
 class GELU : public Module {
 public: 
 	tensor forward(const tensor& input) const override {return bz::gelu(input);} 
-	std::vector<tensor*> parameters() override {return {};};
-	std::unordered_map<std::string, const tensor*> state_dict() const override {return {};}
 };
 
 class Softmax : public Module {
@@ -51,8 +47,6 @@ private:
 public: 
 	Softmax(i32 dim = -1) : _dim(dim) {}
 	tensor forward(const tensor& input) const override {return bz::softmax(input, _dim);} 
-	std::vector<tensor*> parameters() override {return {};}
-	std::unordered_map<std::string, const tensor*> state_dict() const override {return {};}
 };
 
 
@@ -68,12 +62,12 @@ public:
 class Linear: public Module{
 private: 
 	tensor _weight;
-	tensor _bias;
-	u32	_in_shape;
-	u32 _out_shape;
+	std::optional<tensor> _bias = std::nullopt;
+	i32	_in_shape;
+	i32 _out_shape;
 public: 
 	Linear() = default;
-	Linear(u32 in_features, u32 out_features, bool bias = true);
+	Linear(i32 in_features, i32 out_features, bool bias = true);
 	tensor forward(const tensor& input) const override;
 	std::vector<tensor*> parameters()  override; 
 	std::unordered_map<std::string, const tensor*> state_dict() const override;
@@ -89,7 +83,7 @@ public:
 	tensor forward(const tensor& input) const override;
 	std::vector<tensor*> parameters()  override; 
 	std::unordered_map<std::string, const tensor*> state_dict() const override;
-	u32 num_layers() const {return _layers.size();} 
+	i32 num_layers() const {return _layers.size();} 
 };
 
 
@@ -122,7 +116,7 @@ std::unique_ptr<Linear>    make_linear(i32 in_shape, i32 out_shape, bool bias=tr
 std::unique_ptr<ReLU>      make_relu();
 std::unique_ptr<GELU>      make_gelu();
 std::unique_ptr<Softmax>   make_softmax(i32 dim = -1);
-std::unique_ptr<Embedding> make_embedding();
+std::unique_ptr<Embedding> make_embedding(i32 num_embeddings, i32 embedding_dim);
 std::unique_ptr<LayerNorm> make_layernorm();
 
 

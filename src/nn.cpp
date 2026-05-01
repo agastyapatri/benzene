@@ -5,7 +5,7 @@
 #include <unordered_map>
 namespace bz::nn{
 
-Linear::Linear(u32 in_features, u32 out_features, bool bias){
+Linear::Linear(i32 in_features, i32 out_features, bool bias){
 	_in_shape = in_features; 
 	_out_shape = out_features; 
 	_weight = tensor::randu_he({(i32)in_features, (i32)out_features}, in_features);
@@ -16,23 +16,21 @@ Linear::Linear(u32 in_features, u32 out_features, bool bias){
 
 tensor Linear::forward(const tensor& input) const {
 	tensor out = matmul(input, _weight);
-	if(_bias.numel() > 0)	out = out+_bias;
+	if(_bias.has_value())	out = out+_bias.value();
 	return out;
 }
 
 std::vector<tensor*> Linear::parameters(){
     std::vector<tensor*> params;
     params.push_back(&_weight);
-    if (_bias.numel() > 0) {
-        params.push_back(&_bias);
-    }
+	if(_bias.has_value())	params.push_back(&_bias.value());
     return params;
 }
 
 std::unordered_map<std::string, const tensor*> Linear::state_dict() const {
 	std::unordered_map<std::string, const tensor*> sd ;
 	sd["weight"] = &_weight;
-	if(_bias.numel() > 0)	sd["bias"] = &_bias;
+	if(_bias.has_value())	sd["bias"] = &_bias.value();
 	return sd;
 }
 
@@ -48,7 +46,7 @@ std::vector<tensor*> Sequential::parameters() {
 
 std::unordered_map<std::string, const tensor*> Sequential::state_dict() const{
 	std::unordered_map<std::string, const tensor*> sd ;
-	for(u32 i = 0; i < _layers.size(); i++){
+	for(i32 i = 0; i < _layers.size(); i++){
 		auto layer_sd = _layers[i]->state_dict();
 		for(const auto& [name, ptr] : layer_sd){
 			sd[std::to_string(i) + "." + name] = ptr;
@@ -107,8 +105,8 @@ std::unique_ptr<Softmax> make_softmax(i32 dim){
 }
 
 
-std::unique_ptr<Embedding> make_embedding(){
-	return std::make_unique<Embedding>();
+std::unique_ptr<Embedding> make_embedding(i32 num_embeddings, i32 embedding_dim){
+	return std::make_unique<Embedding>(num_embeddings, embedding_dim);
 }
 
 

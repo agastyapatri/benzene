@@ -75,18 +75,26 @@ class tensor{
 	//	initiating a  random engine
 	static std::mt19937 rand_engine;
 
+
 public: 
 	tensor(vi32 shape); 
 	tensor(vi32 shape, std::initializer_list<float> values); 
 	tensor() = default;
 
 
+	bool is_contiguous() const;
 	//	seeding the RNG 
 	static void manual_seed(u32 seed){rand_engine.seed(seed);}
 
 	//	accessors 
-	f32 at(vi32 idxs) const;
+	f32  at(vi32 idxs) const;
 	f32& at(vi32 idxs);
+	auto begin() {return _data.begin();}
+	auto end()   {return _data.end();}
+
+
+
+
 	const vf32& data()    const	{return _data;}
 	const vi32& shape()   const {return _shape;}
 	const vi32& strides() const {return _strides;}
@@ -94,8 +102,8 @@ public:
 	i32  ndim()    const {return _ndim;}
 
 	//	overloaded operators
-	bool operator==(const tensor& other) const;
-	bool operator!=(const tensor& other) const;
+	bool   operator==(const tensor& other) const;
+	bool   operator!=(const tensor& other) const;
 	tensor operator+(const tensor& other) const;
 	tensor operator-(const tensor& other) const;
 	tensor operator*(const tensor& other) const;
@@ -116,10 +124,8 @@ public:
 	static tensor rand_normal (vi32 shape, f32 mean, f32 std);
 	static tensor randn(vi32 shape);
 	static tensor randu(vi32 shape, f32 low = 0.0f, f32 high = 1.0f);
-	
 	static tensor randn_he 	  (vi32 shape, u32 fan_in);
 	static tensor randn_xavier (vi32 shape, u32 fan_in, u32 fan_out);
-
 	static tensor randu_he 	  (vi32 shape, u32 fan_in);
 	static tensor randu_xavier (vi32 shape, u32 fan_in, u32 fan_out);
 
@@ -155,6 +161,7 @@ public:
 
 
 
+	//	bz namespace functions; all return new tensors. 
 
 	friend tensor operator*(f32 scalar, const tensor& t);
 	friend tensor relu(const tensor& t);
@@ -171,13 +178,25 @@ public:
 	friend tensor softmax(const tensor& t, i32 dim);
 	friend tensor rmsnorm(const tensor& t);
 	friend tensor layernorm(const tensor& t);
-
 	friend tensor unsqueeze(const tensor& t);
 
-	//	manipulations? 
+
+	tensor view();
+	tensor reshape();
+	
+
 	tensor gather(const tensor& indices, i32 dim = 0) const ;
 	tensor gather(const vi32 indices, i32 dim = 0) const ;
 	void unsqueeze();
+
+
+
+
+
+
+
+
+
 
 };
 

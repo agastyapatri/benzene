@@ -30,7 +30,7 @@ I've tried to keep the dependencies minimal, but BLAS/LAPACK were used to make t
 -   ~transpose~ 
 -   ~Broadcasting~ 
 -   ~softmax~ 
--   ~layer_norm~
+-   layer_norm
 -   ~rmsnorm~ 
 -   reshape 
 -   slice 

@@ -3,4 +3,5 @@
 -Wall 
 -Wextra 
 -Isrc/
+-I/usr/include/python3.14
 

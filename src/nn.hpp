@@ -106,6 +106,9 @@ public:
 	std::unordered_map<std::string, const tensor*> state_dict() const override;
 };
 
+// class LayerNorm: public Module{
+//
+// };
 
 
 
@@ -120,6 +123,7 @@ std::unique_ptr<ReLU>      make_relu();
 std::unique_ptr<GELU>      make_gelu();
 std::unique_ptr<Softmax>   make_softmax(i32 dim = -1);
 std::unique_ptr<Embedding> make_embedding();
+std::unique_ptr<LayerNorm> make_layernorm();
 
 
 

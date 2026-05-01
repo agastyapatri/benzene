@@ -36,6 +36,15 @@ void tensor::compute_strides(){
 	}
 }
 
+bool tensor::is_contiguous() const{
+	i32 expected_stride = 1;
+	for(i32 i = _ndim-1; i >= 0; i--){
+		if(expected_stride != _strides[i])	return false; 
+		expected_stride *= _shape[i];
+	}
+	return true;
+}
+
 vi32 tensor::flat_idx_to_coord(u64 idx) const {
 	vi32 coords(this->_ndim, 0);
 	for(i32 j = 0; j < this->_ndim; j++){
@@ -706,17 +715,17 @@ tensor mv(const tensor& inp1, const tensor& inp2){
 
 tensor leakyrelu(const tensor& t, f32 negative_slope) {
 	tensor out(t._shape);
-	std::transform(std::execution::par, t.data().begin(), t.data().end(), out._data.begin(), [negative_slope](f32 x)->f32{
-		return (x > 0) ? x : -negative_slope;
-	});
+	#pragma omp parallel for
+	for(u64 i = 0 ; i < t._numel; i++)
+		out._data[i] = std::max(t._data[i], negative_slope * t._data[i]);
 	return out;
 }
 
 tensor relu(const tensor& t){
 	tensor out(t._shape);
-	std::transform(std::execution::par, t._data.begin(), t._data.end(), out._data.begin(), [](f32 x)->f32{
-		return (x > 0) ? x : 0;
-	});
+	#pragma omp parallel for
+	for(u64 i = 0 ; i < t._numel; i++)
+		out._data[i] = std::max(t._data[i], 0.0f);
 	return out;
 }
 
@@ -733,7 +742,7 @@ tensor sigmoid(const tensor& t){
 	tensor out(t._shape);
 	#pragma omp parallel for
 	for(u64 i = 0; i < t._numel; i++)
-		out._data[i] = (1 / (1 + std::exp(t._data[i])));
+		out._data[i] = (1 / (1 + std::exp(-t._data[i])));
 	return out;
 }
 
@@ -781,7 +790,19 @@ tensor tanh(const tensor& t){
 tensor transpose(const tensor& t, u32 dim0, u32 dim1){
 	tensor out = t;
 	std::swap(out._shape[dim0], out._shape[dim1]);
-	std::swap(out._strides[dim0], out._strides[dim1]);
+	out.compute_strides();
+
+	for(bz::u64 i = 0; i < t._numel; i++){
+		bz::vi32 original_loc = t.flat_idx_to_coord(i);
+		bz::vi32 new_loc = original_loc;
+		std::swap(new_loc[dim0], new_loc[dim1]);
+		i32 offset = 0;
+		for(bz::i32 j = 0; j < out._ndim; j++){
+			offset += new_loc[j] * out._strides[j];
+		}
+		out._data[offset] = t._data[i];
+	}
+
 	return out;
 }
 
@@ -948,5 +969,8 @@ tensor unsqueeze(const tensor& t){
 	out.compute_strides();
 	return out;
 }
+
+
+
 
 }

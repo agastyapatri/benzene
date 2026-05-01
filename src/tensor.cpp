@@ -183,75 +183,6 @@ tensor tensor::zeros(vi32 shape){
 }
 
 
-tensor tensor::operator+(const tensor& other) const {
-	// assert(this->_shape == other._shape);
-	auto outshape = broadcast_shapes(this->_shape, other._shape);
-	if(!outshape){
-		throw std::runtime_error("Tensors are not broadcast compatible.");
-	}
-	tensor out(outshape.value());
-
-	//	if both shapes are equal, simply add elementwise.
-	if(this->_shape == other._shape){
-		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
-		cblas_saxpy(
-			out._numel, 
-			1.0f,
-			other._data.data(), 1, 
-			out._data.data(), 1
-		);
-		return out;
-	}
-
-	//	(M, N) + (N)
-	if(this->_ndim == 2 && other._ndim  == 1 && this->_shape[1] == other._shape[0]){
-		i32 M = this->_shape[0];
-		i32 N = this->_shape[1];
-		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
-		for(i32 i = 0; i < M; i++){
-			cblas_saxpy(
-				N,
-				1.0f,
-				other._data.data(), 1, 
-				out._data.data() + (i * N), 1
-			);
-		}
-		return out;
-	}
-
-	// Generalized (..., N) + (N) case
-	if (other._ndim == 1 && this->_shape.back() == other._shape[0]) {
-		i32 N = other._shape[0];
-		i32 total_rows = this->_numel / N; 
-		
-		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
-		
-		#pragma omp parallel for
-		for (i32 i = 0; i < total_rows; i++) {
-			cblas_saxpy(
-				N,
-				1.0f,
-				other._data.data(), 1, 
-				out._data.data() + (i * N), 1
-			);
-		}
-		return out;
-	}
-
-
-	if(other._numel == 1){
-		float scalar = other._data[0];
-		#pragma omp parallel for
-		for(u64 i = 0; i < _numel; i++)
-			out._data[i] = this->_data[i] + scalar;
-		return out;
-	}
-
-
-	//	TODO: handle the generic case. 
-	//	Proper output has to be handled, currently returns 0
-	throw std::runtime_error("Broacasting pattern not currently handled by Benzene");
-}
 
 tensor tensor::operator+(f32 scalar) const{
 	tensor out(this->_shape);
@@ -285,45 +216,30 @@ void tensor::pow_(const f32 exponent) {
 
 
 
-tensor tensor::operator-(const tensor& other) const {
+//unified helper for broadcasted +, -
+tensor tensor::arithmetic(const tensor& inp2, f32 op) const {
 	// assert(this->_shape == other._shape);
-	auto outshape = broadcast_shapes(this->_shape, other._shape);
+	auto outshape = broadcast_shapes(this->_shape, inp2._shape);
 	if(!outshape){
 		throw std::runtime_error("Tensors are not broadcast compatible.");
 	}
 	tensor out(outshape.value());
 
 	//	if both shapes are equal, simply add elementwise.
-	if(this->_shape == other._shape){
+	if(this->_shape == inp2._shape){
 		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
 		cblas_saxpy(
 			out._numel, 
-			-1.0f,
-			other._data.data(), 1, 
+			op,
+			inp2._data.data(), 1, 
 			out._data.data(), 1
 		);
 		return out;
 	}
 
-	//	(M, N) + (N)
-	if(this->_ndim == 2 && other._ndim  == 1 && this->_shape[1] == other._shape[0]){
-		i32 M = this->_shape[0];
-		i32 N = this->_shape[1];
-		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
-		for(i32 i = 0; i < M; i++){
-			cblas_saxpy(
-				N,
-				-1.0f,
-				other._data.data(), 1, 
-				out._data.data() + (i * N), 1
-			);
-		}
-		return out;
-	}
-
 	// Generalized (..., N) + (N) case
-	if (other._ndim == 1 && this->_shape.back() == other._shape[0]) {
-		i32 N = other._shape[0];
+	if (inp2._ndim == 1 && this->_shape.back() == inp2._shape[0]) {
+		i32 N = inp2._shape[0];
 		i32 total_rows = this->_numel / N; 
 		
 		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
@@ -332,8 +248,8 @@ tensor tensor::operator-(const tensor& other) const {
 		for (i32 i = 0; i < total_rows; i++) {
 			cblas_saxpy(
 				N,
-				-1.0f,
-				other._data.data(), 1, 
+				op,
+				inp2._data.data(), 1, 
 				out._data.data() + (i * N), 1
 			);
 		}
@@ -341,12 +257,11 @@ tensor tensor::operator-(const tensor& other) const {
 	}
 
 
-
-	if(other._numel == 1){
-		float scalar = other._data[0];
+	if(inp2._numel == 1){
+		float scalar = op * inp2._data[0];
 		#pragma omp parallel for
 		for(u64 i = 0; i < _numel; i++)
-			out._data[i] = this->_data[i] - scalar;
+			out._data[i] = this->_data[i] + scalar;
 		return out;
 	}
 
@@ -354,6 +269,22 @@ tensor tensor::operator-(const tensor& other) const {
 	//	TODO: handle the generic case. 
 	//	Proper output has to be handled, currently returns 0
 	throw std::runtime_error("Broacasting pattern not currently handled by Benzene");
+
+}
+
+
+
+
+
+
+
+tensor tensor::operator+(const tensor& other) const {
+	return this->arithmetic(other, 1.0f);
+	
+}
+
+tensor tensor::operator-(const tensor& other) const {
+	return this->arithmetic(other, -1.0f);
 }
 
 tensor tensor::operator*(const tensor& other) const {
@@ -390,7 +321,7 @@ tensor tensor::operator*(const tensor& other) const {
 		
 		#pragma omp parallel for
 		for(u64 i = 0; i < _numel; i++)
-			out._data[i] = this->_data[i] * other._data[i];
+			out._data[i] = this->_data[i] * other._data[i % N];
 		return out;
 	}
 

@@ -75,6 +75,8 @@ class tensor{
 	//	initiating a  random engine
 	static std::mt19937 rand_engine;
 
+	tensor arithmetic(const tensor& inp2, f32 op) const ; 
+
 
 public: 
 	tensor(vi32 shape); 

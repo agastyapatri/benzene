@@ -23,9 +23,15 @@ int main(){
 	//	REORDERING THE ELEMENTS IN MEMORY
 
 	tensor t1 = tensor::randn({2,3,4});
-	tensor t2 = bz::transpose(t1, 1, 2);
-	std::cout << t1 << std::endl;
-	std::cout << t2 << std::endl;
+	tensor t2 = tensor::rand_normal(t1.shape(), -100, 100);
+
+
+
+	tensor t3 = t1 - t2;
+	for(bz::u64 i = 0; i < t1.numel(); i++){
+		std::cout << t1.data()[i] << " + " << t2.data()[i] << ": " << t3.data()[i] << "\n"; 
+	}
+
 
 
 

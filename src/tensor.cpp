@@ -24,7 +24,7 @@ tensor::tensor(vi32 shape){
 
 void tensor::unsqueeze(){
 	_shape.insert(_shape.begin(), 1);
-	_numel = _shape.size();
+	_ndim = _shape.size(); 
 	this->compute_strides();
 }
 
@@ -34,6 +34,14 @@ void tensor::compute_strides(){
 	for(int i = _ndim - 2; i >= 0; i--){
 		_strides[i] = _strides[i + 1] * _shape[i + 1];
 	}
+}
+
+tensor tensor::eye(const i32 size){
+	tensor out({size, size});
+	for(i32 i = 0; i < size; i++){
+		out.at({i, i}) = 1.0f;
+	}
+	return out;
 }
 
 bool tensor::is_contiguous() const{
@@ -300,18 +308,6 @@ tensor tensor::operator*(const tensor& other) const {
 		return out;
 	}
 
-	//	(M, N) + (N)
-	if(this->_ndim == 2 && other._ndim  == 1 && this->_shape[1] == other._shape[0]){
-		u32 M = this->_shape[0];
-		u32 N = this->_shape[1];
-		for(u32 i = 0; i < M; i++){
-			for(u32 j = 0; j < N; j++){
-				out._data[i * N + j] = this->_data[i * N + j] * other._data[j]; 
-			}
-		}
-		return out;
-	}
-
 	// Generalized (..., N) + (N) case
 	if (other._ndim == 1 && this->_shape.back() == other._shape[0]) {
 		i32 N = other._shape[0];
@@ -332,6 +328,49 @@ tensor tensor::operator*(const tensor& other) const {
 		#pragma omp parallel for
 		for(u64 i = 0; i < _numel; i++)
 			out._data[i] = this->_data[i] * scalar;
+		return out;
+	}
+
+
+	//	TODO: handle the generic case. 
+	//	Proper output has to be handled, currently returns 0
+	throw std::runtime_error("Broacasting pattern not currently handled by Benzene");
+}
+
+
+tensor tensor::operator/(const tensor& other) const {
+	auto outshape = broadcast_shapes(this->_shape, other._shape);
+	if(!outshape){
+		throw std::runtime_error("Tensors are not broadcast compatible.");
+	}
+	tensor out(outshape.value());
+
+	if(this->_shape == other._shape){
+		for(u64 i = 0; i < this->_numel; i++)
+			out._data[i] = this->_data[i] / other._data[i];
+		return out;
+	}
+
+	// Generalized (..., N) + (N) case
+	if (other._ndim == 1 && this->_shape.back() == other._shape[0]) {
+		i32 N = other._shape[0];
+		i32 total_rows = this->_numel / N; 
+		
+		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
+		
+		#pragma omp parallel for
+		for(u64 i = 0; i < _numel; i++)
+			out._data[i] = this->_data[i] / other._data[i % N];
+		return out;
+	}
+
+	//	(M, N, K ...) * (1)
+	if(other._numel == 1){
+		tensor out(this->_shape);
+		float scalar = other._data[0];
+		#pragma omp parallel for
+		for(u64 i = 0; i < _numel; i++)
+			out._data[i] = this->_data[i] / scalar;
 		return out;
 	}
 
@@ -507,6 +546,47 @@ tensor tensor::mean (u32 axis) const {
 	f32 divisor = (f32)this->_shape[axis];
 	return out / divisor;
 }
+
+
+
+
+tensor tensor::var() const {
+	u32 axis = _ndim - 1;
+	vi32 outshape = reduced_shape(axis);
+	tensor out(outshape);
+	i32 axis_dim = _shape[axis];
+	u64 num_rows = _numel / axis_dim;
+	for(u64 r = 0; r < num_rows; ++r){
+		u64 offset = r * axis_dim; 
+		const f32* in_ptr = _data.data() + offset; 
+		f32 mean = 0.0f; 
+		for(i32 i = 0; i < axis_dim; ++i)	mean += in_ptr[i];
+		mean /= axis_dim;
+		f32 var = 0.0f; 
+		for(i32 i = 0; i < axis_dim; ++i){
+			f32 diff = in_ptr[i] - mean; 
+			var += diff * diff; 
+		}
+		var /= axis_dim; 
+		out._data[r] = var;
+	}
+	return out;
+}
+
+
+
+
+tensor tensor::std_dev() const {
+	tensor out = var(); 
+	for(u64 i = 0; i < out._numel; i++){
+		out._data[i] = sqrtf(out._data[i]);
+	}
+	return out;
+}
+
+
+
+
 
 
 tensor matmul(const tensor& inp1, const tensor& inp2){
@@ -736,6 +816,21 @@ tensor transpose(const tensor& t, u32 dim0, u32 dim1){
 
 	return out;
 }
+
+tensor reshape(const tensor& t, vi32 new_shape){
+	u64 new_numel = 1;
+	for(int i : new_shape) new_numel *= i;
+	assert(new_numel == t._numel);
+	tensor out; 
+	out._shape = new_shape;
+	out._ndim  = new_shape.size(); 
+	out._numel = new_numel;
+	out.compute_strides();
+	out._data.resize(new_numel, 0.0f);
+	std::copy(t._data.begin(), t._data.end(), out._data.begin());
+	return out;
+}
+
 
 tensor softmax(const tensor& t, i32 dim) {
 	// 1. Handle negative dimensions (PyTorch style)

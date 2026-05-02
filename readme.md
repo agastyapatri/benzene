@@ -7,18 +7,16 @@
 ░▒▓███████▓▒░░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░ 
 ```
 Benzene is a very tiny LLM inference engine, written in C++20. This began as an educational project, and my intent is to slowly increase the complexity of the project as my skill improves.
-
-Conceptually, the structure of the project is: 
-```
-Layer 4 — Model (GPT-2 and other small language models)
-    uses ↑
-Layer 3 — Neural Network Primitives (attention, FFN, layernorm)
-    uses ↑
-Layer 2 — Tensor Operations (matmul, softmax, reductions)
-    uses ↑
-Layer 1 — bz::tensor (storage, indexing, random init)
-```
 I've tried to keep the dependencies minimal, but BLAS/LAPACK were used to make the core math kernels reasonably performant.
+
+
+
+NOTES: 
+
+1.  `bz::layernorm` and `bz::nn::LayerNorm` currently only handle normzalizing over the last dimension
+
+
+
 
 ##  Roadmap
 1.  `bz::tensor` foundation + linear algebra
@@ -30,9 +28,9 @@ I've tried to keep the dependencies minimal, but BLAS/LAPACK were used to make t
 -   ~transpose~ 
 -   ~Broadcasting~ 
 -   ~softmax~ 
--   layer_norm
+-   ~layer_norm~
 -   ~rmsnorm~ 
--   reshape 
+-   ~reshape~ 
 -   slice 
 -   concat 
 -   Tensor I/O 

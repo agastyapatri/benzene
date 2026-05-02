@@ -42,11 +42,12 @@ tensor rmsnorm(const tensor& t);
 tensor layernorm(const tensor& t);
 tensor unsqueeze(const tensor& t);
 tensor transpose(const tensor& t, u32 dim0, u32 dim1);
+tensor reshape(const tensor& t, vi32 new_shape);
 
 
 
 tensor matmul(const tensor& inp1, const tensor& inp2);
-tensor bmm(const tensor& inp1, const tensor& inp2);
+// tensor bmm(const tensor& inp1, const tensor& inp2);
 tensor dot(const tensor& inp1, const tensor& inp2);
 tensor mm(const tensor& inp1, const tensor& inp2);
 tensor mv(const tensor& inp1, const tensor& inp2);
@@ -109,6 +110,7 @@ public:
 	tensor operator+(const tensor& other) const;
 	tensor operator-(const tensor& other) const;
 	tensor operator*(const tensor& other) const;
+	tensor operator/(const tensor& other) const;
 	tensor operator*(f32 scalar) const;
 	tensor operator/(f32 scalar) const;
 	tensor operator+(f32 scalar) const;
@@ -130,7 +132,6 @@ public:
 	static tensor randn_xavier (vi32 shape, u32 fan_in, u32 fan_out);
 	static tensor randu_he 	  (vi32 shape, u32 fan_in);
 	static tensor randu_xavier (vi32 shape, u32 fan_in, u32 fan_out);
-
 	static tensor eye(const i32 size);
 
 	//	transcendentals; inplace
@@ -148,10 +149,9 @@ public:
 	tensor max (u32 axis) const;
 	tensor min (u32 axis) const;
 	tensor sum (u32 axis) const;
+	tensor var () const;
+	tensor std_dev () const;
 
-	//	tensor ops; member functions
-	tensor rmsnorm() const;
-	tensor layernorm() const;
 
 
 	//	tensor tensor multiplications
@@ -175,17 +175,15 @@ public:
 	friend tensor cos(const tensor& t) ;
 	friend tensor tanh(const tensor& t); 
 	friend tensor sigmoid(const tensor& t);
-	friend tensor transpose(const tensor& t, u32 dim0, u32 dim1);
 	friend tensor operator+(f32 scalar, const tensor& t);
 	friend tensor softmax(const tensor& t, i32 dim);
 	friend tensor rmsnorm(const tensor& t);
 	friend tensor layernorm(const tensor& t);
 	friend tensor unsqueeze(const tensor& t);
 
-
-	tensor view();
-	tensor reshape();
-	
+	// manipulations
+	friend tensor transpose(const tensor& t, u32 dim0, u32 dim1);
+	friend tensor reshape(const tensor& t, vi32 new_shape);
 
 	tensor gather(const tensor& indices, i32 dim = 0) const ;
 	tensor gather(const vi32 indices, i32 dim = 0) const ;

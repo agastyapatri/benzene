@@ -100,9 +100,21 @@ public:
 	std::unordered_map<std::string, const tensor*> state_dict() const override;
 };
 
-// class LayerNorm: public Module{
-//
-// };
+class LayerNorm: public Module{
+	tensor _weight;
+	tensor _bias;
+	vi32 _normalized_shape;
+public: 
+	LayerNorm() = default;
+	LayerNorm(vi32 normalized_shape); 
+	tensor forward(const tensor& input) const override;
+	std::vector<tensor*> parameters()  override; 
+	std::unordered_map<std::string, const tensor*> state_dict() const override;
+
+
+
+
+};
 
 
 
@@ -117,7 +129,7 @@ std::unique_ptr<ReLU>      make_relu();
 std::unique_ptr<GELU>      make_gelu();
 std::unique_ptr<Softmax>   make_softmax(i32 dim = -1);
 std::unique_ptr<Embedding> make_embedding(i32 num_embeddings, i32 embedding_dim);
-std::unique_ptr<LayerNorm> make_layernorm();
+std::unique_ptr<LayerNorm> make_layernorm(i32 normalized_shape);
 
 
 

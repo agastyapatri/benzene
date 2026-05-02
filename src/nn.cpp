@@ -46,7 +46,7 @@ std::vector<tensor*> Sequential::parameters() {
 
 std::unordered_map<std::string, const tensor*> Sequential::state_dict() const{
 	std::unordered_map<std::string, const tensor*> sd ;
-	for(i32 i = 0; i < _layers.size(); i++){
+	for(u64 i = 0; i < _layers.size(); i++){
 		auto layer_sd = _layers[i]->state_dict();
 		for(const auto& [name, ptr] : layer_sd){
 			sd[std::to_string(i) + "." + name] = ptr;
@@ -88,6 +88,55 @@ std::vector<tensor*> Embedding::parameters(){
 }
 
 
+LayerNorm::LayerNorm(vi32 normalized_shape){
+	_normalized_shape = normalized_shape;
+	_weight = tensor::ones(normalized_shape);
+	_bias = tensor::zeros(normalized_shape);
+}
+
+tensor LayerNorm::forward(const tensor& input) const {
+	tensor out = bz::layernorm(input);
+	out = (out * _weight) + _bias; 
+	return out;
+}
+
+
+std::vector<tensor*> LayerNorm::parameters(){
+    std::vector<tensor*> params;
+    params.push_back(&_weight);
+    params.push_back(&_bias);
+    return params;
+}
+
+std::unordered_map<std::string, const tensor*> LayerNorm::state_dict() const {
+	std::unordered_map<std::string, const tensor*> sd ;
+	sd["weight"] = &_weight;
+	sd["bias"] = &_bias;
+	return sd;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*****************
+ *	Layer Factory
+*****************/
+
+
 std::unique_ptr<Linear> make_linear(i32 in_shape, i32 out_shape, bool bias){
 	return std::make_unique<Linear>(in_shape, out_shape, bias);
 }
@@ -109,6 +158,10 @@ std::unique_ptr<Embedding> make_embedding(i32 num_embeddings, i32 embedding_dim)
 	return std::make_unique<Embedding>(num_embeddings, embedding_dim);
 }
 
+std::unique_ptr<LayerNorm> make_layernorm(i32 normalized_shape){
+	vi32 norm_shape(1, normalized_shape);
+	return std::make_unique<LayerNorm>(norm_shape);
+}
 
 
 

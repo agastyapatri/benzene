@@ -35,6 +35,9 @@ std::unordered_map<std::string, const tensor*> Linear::state_dict() const {
 }
 
 
+
+
+
 std::vector<tensor*> Sequential::parameters() {
     std::vector<tensor*> params;
 	for(const auto& layer: _layers){
@@ -116,12 +119,38 @@ std::unordered_map<std::string, const tensor*> LayerNorm::state_dict() const {
 }
 
 
+RMSNorm::RMSNorm(vi32 normalized_shape){
+	_normalized_shape = normalized_shape;
+	_weight = tensor::ones(normalized_shape);
+}
 
+tensor RMSNorm::forward(const tensor& input) const {
+	tensor out = bz::rmsnorm(input);
+	out = out * _weight;
+	return out;
+}
 
+std::vector<tensor*> RMSNorm::parameters(){
+    std::vector<tensor*> params;
+    params.push_back(&_weight);
+    return params;
+}
 
+std::unordered_map<std::string, const tensor*> RMSNorm::state_dict() const {
+	std::unordered_map<std::string, const tensor*> sd ;
+	sd["weight"] = &_weight;
+	return sd;
+}
 
-
-
+//	TODO 
+// Conv2d::Conv2d(i32 in_channels, i32 out_channels, i32 kernel_size, i32 stride, i32 padding){
+// 	_in_channels = in_channels;
+// 	_out_channels = out_channels; 
+// 	_stride = stride;
+// 	_kernel_size = kernel_size;
+// 	_padding = padding;
+// 	_weight = tensor::randn({_kernel_size, _kernel_size});
+// }
 
 
 
@@ -145,6 +174,14 @@ std::unique_ptr<ReLU> make_relu(){
 	return std::make_unique<ReLU>();
 }
 
+std::unique_ptr<LeakyReLU> make_leakyrelu(f32 negative_slope){
+	return std::make_unique<LeakyReLU>(negative_slope);
+}
+
+std::unique_ptr<Tanh> make_tanh(){
+	return std::make_unique<Tanh>();
+}
+
 std::unique_ptr<GELU> make_gelu(){
 	return std::make_unique<GELU>();
 }
@@ -161,6 +198,11 @@ std::unique_ptr<Embedding> make_embedding(i32 num_embeddings, i32 embedding_dim)
 std::unique_ptr<LayerNorm> make_layernorm(i32 normalized_shape){
 	vi32 norm_shape(1, normalized_shape);
 	return std::make_unique<LayerNorm>(norm_shape);
+}
+
+std::unique_ptr<RMSNorm> make_rmsnorm(i32 normalized_shape){
+	vi32 norm_shape(1, normalized_shape);
+	return std::make_unique<RMSNorm>(norm_shape);
 }
 
 

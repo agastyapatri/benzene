@@ -74,17 +74,17 @@ NOTES:
 
 
 
-##  GPT-2 
--   Vocabulary: 50257 
--   Embedding dimension: 768 
--   Maximum sequence length: 1024 tokens 
--   Transformer Layers: 12
+##  Immediate Concerns 
+1.  Learn about and implement the `bz::nn::MultiheadAttention` module 
+2.  MLP Block: `bz::nn::Linear` and `bz::nn::GELU` stacked together (trivial)
+3.  Implement the transformer block; test how well `bz::nn::Sequential` works with all modules created up to this point.
+4.  Build `GPT-2 Small` architecture while making sure to understand the decisions made during the building of this model. Testing of the forward pass will be done with dummy data taken from microgpt-c.
+5.  Loading GPT-2 weights from GGUF. Have to figure out the deserialization process. This will be a bit of fun.
 
 
-
-
-
-
+### Concerns after that 
+6.  Tokenizing. 
+7.  Actual inference 
 
 
 
@@ -97,6 +97,11 @@ NOTES:
 
 
 ##  GPT-2 Layers and Structure 
+-   Vocabulary: 50257 
+-   Embedding dimension: 768 
+-   Maximum sequence length: 1024 tokens 
+-   Transformer Layers: 12
+
 GPT-2 is built upon a stack of 12 identical transformer decoder blocks. Unlike the original "Attention is all you need" transformer architecture, which uses both and encoder and a decoder, GPT-2 uses only the decoder stack. 
 
 1. **Input Processing Layers**
@@ -116,31 +121,6 @@ Each of the 12 blocks contains several sub-layers, structured using pre-normaliz
 3.  **Output Layers**: After passing through 12 transformer blocks, the output is processed by the final layers to produce predictions.
 -   The final layer norm is applied after the last transformer block. 
 -   Language Modeling linear layer: the final 768 dim hidden state is projected back into the vocabulary size to produce logits, which are then passed through a softmax function to generate the probability distribution for the next token.
-
-
-
-### The Embedding Layer
-The embedding layer maps an integer token to a 768-dimension vector in the model's embedding space. It function asa memory-efficient lookup table.
-
-The vocabulary of GPT-2 small is 50257, which makes one hot encoding untenable. The one-hot encoded vectors would be extremely sparse, memory inefficient and stripped of semantic quality. The point of the vector space is that eowords which are semantically similar (cat ~ pet ~ dog) would have a smaller distance value in the embedding vector space.
-
-
--   **How it works**
-When you pass a batch of token_ids [101, 5. 204] into the layer: 
-1.  The layer treates the input integers as row indices: **the look up.**
-2.  It fetches the correspoding rows froma giant weight matrix of shape [vocab_size, embedding_dim]: **Extraction** 
-3.  You get back a matrix of shape [batch_size, sequence_length, embedding_dim]
-
--   **Why is it learnable** 
-When the embedding layer is initialized, those 768 dimensional vectors are just random noise. Ad the model trains, the network adjusts the values in this table so that the words that appear in similar contexts end up close to each other in the final 768-dim space.
-
-#### **Implementation in `benzene`**
-`nn::Embedding(input) = tensor::gather(_weight, input)`
-`_weight.shape = [vocab_size, embedding_dim]`
-`input.shape = [num_tokens]`
-`output.shape = [Sequence_length, embedding_dim]`
-
-The `tensor::gather` operation treats a tensor of indices as a map to extract specific rows (or slices) from a larger source tensor. 
 
 
 

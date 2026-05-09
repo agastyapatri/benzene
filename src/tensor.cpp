@@ -3,7 +3,6 @@
 #include <cassert>
 #include <cfloat>
 #include <initializer_list>
-#include <execution>
 #include <random> 
 #include <cmath>
 #include <openblas/cblas.h> 
@@ -995,8 +994,6 @@ tensor unsqueeze(const tensor& t){
 	out.compute_strides();
 	return out;
 }
-
-
 
 
 }

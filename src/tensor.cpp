@@ -272,9 +272,6 @@ tensor tensor::arithmetic(const tensor& inp2, f32 op) const {
 		return out;
 	}
 
-
-	//	TODO: handle the generic case. 
-	//	Proper output has to be handled, currently returns 0
 	throw std::runtime_error("Broacasting pattern not currently handled by Benzene");
 
 }
@@ -330,6 +327,21 @@ tensor tensor::operator*(const tensor& other) const {
 		return out;
 	}
 
+	//	(M, N, K) * (N, K)
+	if(this->_ndim == 3 && other._ndim == 2){
+		i32 N = other._shape[0]*other._shape[1];
+		i32 num_iters = this->_shape[0];
+		#pragma omp parallel for
+		for(i32 i = 0; i < num_iters; i++){
+			for(i32 j = 0; j < N; j++){
+				out._data[i*N + j] = this->_data[i*N + j] * other._data[j]; 
+			}
+		}
+		return out;
+
+	
+	}
+
 
 	//	TODO: handle the generic case. 
 	//	Proper output has to be handled, currently returns 0
@@ -353,10 +365,6 @@ tensor tensor::operator/(const tensor& other) const {
 	// Generalized (..., N) + (N) case
 	if (other._ndim == 1 && this->_shape.back() == other._shape[0]) {
 		i32 N = other._shape[0];
-		i32 total_rows = this->_numel / N; 
-		
-		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
-		
 		#pragma omp parallel for
 		for(u64 i = 0; i < _numel; i++)
 			out._data[i] = this->_data[i] / other._data[i % N];
@@ -373,11 +381,27 @@ tensor tensor::operator/(const tensor& other) const {
 		return out;
 	}
 
+	//	(M, N, K) * (N, K)
+	if(this->_ndim == 3 && other._ndim == 2){
+		i32 N = other._shape[0]*other._shape[1];
+		i32 num_iters = this->_shape[0];
+		#pragma omp parallel for
+		for(i32 i = 0; i < num_iters; i++){
+			for(i32 j = 0; j < N; j++){
+				out._data[i*N + j] = this->_data[i*N + j] / other._data[j]; 
+			}
+		}
+		return out;
+
+
+	}
 
 	//	TODO: handle the generic case. 
 	//	Proper output has to be handled, currently returns 0
 	throw std::runtime_error("Broacasting pattern not currently handled by Benzene");
 }
+
+
 
 tensor tensor::operator*(float scalar) const {
 	tensor out(_shape);

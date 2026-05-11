@@ -2,6 +2,7 @@
 #include "tensor.hpp"
 #include <bit>
 #include <cassert>
+#include <limits>
 #include <memory>
 #include <stdatomic.h>
 #include <string>
@@ -226,6 +227,10 @@ tensor CausalSelfAttention::forward(const tensor& input) const {
 	tensor attn_scores = bz::matmul(queries, bz::transpose(keys, keys.ndim() - 1, keys.ndim() - 2)); // batch_size x seq_len x seq_len
 	tensor attn_weights = bz::softmax(attn_scores *std::sqrtf(1.0f / _d_kq) , -1); 					 //	batch_size x seq_len x seq_len
 	attn_weights = attn_weights * make_mask(attn_weights.shape()[attn_weights.ndim() - 1]);			 // masking the attention weights
+	tensor row_sums = attn_weights.sum(attn_weights.ndim() - 1);	
+	
+	//	TODO: figure this shit out. Broadcasting incompatibility for these shapes.
+	attn_weights = attn_weights / row_sums;
 	tensor context_vec = bz::matmul(attn_weights, values); 											 // batch_size x seq_len x d_v
 	return context_vec;
 }

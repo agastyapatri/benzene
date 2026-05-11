@@ -11,10 +11,11 @@ namespace nn = bz::nn;
 
 int main(void){
 	tensor::manual_seed(42);
-	tensor input = bz::tensor::randn({batch_size, seq_len, d_in});
-	nn::CausalSelfAttention csa(d_in, d_kq, d_v);
-	tensor out = csa(input);
-	std::cout << out << std::endl;
+	tensor t1 = bz::tensor::randn({batch_size, seq_len, seq_len});
+	tensor t2 = bz::tensor::randn({seq_len, seq_len});
+	tensor t3 = t1 / t2;
+	std::cout << t3 << std::endl;
+
 
 
 

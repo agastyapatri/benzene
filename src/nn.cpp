@@ -172,20 +172,60 @@ std::unordered_map<std::string, const tensor*> SelfAttention::state_dict() const
 	return sd;
 }
 
-
-void printshape(tensor t){
-	for(auto i : t.shape())
-		std::cout << i << " ";
-	std::cout << std::endl;
-}
-
-
 tensor SelfAttention::forward(const tensor& input) const {
 	tensor keys = bz::matmul(input, _w_k);	 	//	batch_size x seq_len x d_kq
 	tensor queries = bz::matmul(input, _w_q); 	//	batch_size x seq_len x d_kq
 	tensor values = bz::matmul(input, _w_v);	//	batch_size x seq_len x d_v
 	tensor attn_scores = bz::matmul(queries, bz::transpose(keys, keys.ndim() - 1, keys.ndim() - 2)); // batch_size x seq_len x seq_len
 	tensor attn_weights = bz::softmax(attn_scores *std::sqrtf(1.0f / _d_kq) , -1); 					 //	batch_size x seq_len x seq_len
+	tensor context_vec = bz::matmul(attn_weights, values); 											 // batch_size x seq_len x d_v
+	return context_vec;
+}
+
+
+CausalSelfAttention::CausalSelfAttention(i32 d_in, i32 d_kq, i32 d_v){
+	_d_in = d_in;
+	_d_kq = d_kq;
+	_d_v  = d_v;
+	_w_q = tensor::randu_he({_d_in, _d_kq}, _d_in);
+	_w_k = tensor::randu_he({_d_in, _d_kq}, _d_in);
+	_w_v = tensor::randu_he({_d_in, _d_v}, _d_in);
+}
+std::vector<tensor*> CausalSelfAttention::parameters(){
+    std::vector<tensor*> params;
+    params.push_back(&_w_q);
+    params.push_back(&_w_k);
+    params.push_back(&_w_v);
+    return params;
+}
+
+std::unordered_map<std::string, const tensor*> CausalSelfAttention::state_dict() const {
+	std::unordered_map<std::string, const tensor*> sd ;
+	sd["w_q.weight"] = &_w_q;
+	sd["w_k.weight"] = &_w_k;
+	sd["w_v.weight"] = &_w_v;
+	return sd;
+}
+
+
+
+static inline tensor make_mask(i32 size){
+	tensor out({size, size});
+	for(int i = 0; i < size; i++){
+		for(int j = 0; j < size; j++){
+			out.at({i, j}) = (i >=  j) ? 1 : 0;
+		}
+	}
+	return out;
+}
+
+tensor CausalSelfAttention::forward(const tensor& input) const {
+	tensor keys = bz::matmul(input, _w_k);	 	//	batch_size x seq_len x d_kq
+	tensor queries = bz::matmul(input, _w_q); 	//	batch_size x seq_len x d_kq
+	tensor values = bz::matmul(input, _w_v);	//	batch_size x seq_len x d_v
+	tensor attn_scores = bz::matmul(queries, bz::transpose(keys, keys.ndim() - 1, keys.ndim() - 2)); // batch_size x seq_len x seq_len
+	tensor attn_weights = bz::softmax(attn_scores *std::sqrtf(1.0f / _d_kq) , -1); 					 //	batch_size x seq_len x seq_len
+	attn_weights = attn_weights * make_mask(attn_weights.shape()[attn_weights.ndim() - 1]);			 // masking the attention weights
 	tensor context_vec = bz::matmul(attn_weights, values); 											 // batch_size x seq_len x d_v
 	return context_vec;
 }
@@ -242,8 +282,12 @@ std::unique_ptr<RMSNorm> make_rmsnorm(i32 normalized_shape){
 	return std::make_unique<RMSNorm>(norm_shape);
 }
 
-std::unique_ptr<SelfAttention>   make_selfattention(i32 d_in, i32 d_kq, i32 d_v){
+std::unique_ptr<SelfAttention>   make_SA(i32 d_in, i32 d_kq, i32 d_v){
 	return std::make_unique<SelfAttention>(d_in, d_kq, d_v);
+}
+
+std::unique_ptr<CausalSelfAttention>   make_CSA(i32 d_in, i32 d_kq, i32 d_v){
+	return std::make_unique<CausalSelfAttention>(d_in, d_kq, d_v);
 }
 
 

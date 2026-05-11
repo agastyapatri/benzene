@@ -67,13 +67,9 @@ public:
 };
 
 
-
-
-
-
-
-
-
+/****************************************
+ * Layer types. 
+****************************************/
 
 
 class Linear: public Module{
@@ -155,44 +151,36 @@ public:
 	std::unordered_map<std::string, const tensor*> state_dict() const override;
 };
 
+class CausalSelfAttention: public Module{
+	i32 _d_in;		//	embedding dimension of the input sequence
+	i32 _d_kq;		//	output dimension of the query and key weight matrices	
+	i32 _d_v;		//	output dimension of the value weight matrix	
+	tensor _w_k;	//	key weights; shape [d_in, d_kq] 
+	tensor _w_q; 	//	query weights; shape [d_in, d_kq]  
+	tensor _w_v; 	//	value weights; shape [d_in, d_v]
+public: 
+	CausalSelfAttention() = default; 
+	CausalSelfAttention(i32 d_in, i32 d_kq, i32 d_v);
+	tensor forward(const tensor& input) const override;
+	std::vector<tensor*> parameters()  override; 
+	std::unordered_map<std::string, const tensor*> state_dict() const override;
+};
 
-
-
-
-
-
-
-
-
-//	TODO
-//
-//
-//
-//
-// class Conv2d: public Module {
-// 	i32 _in_channels;
-// 	i32 _out_channels; 
-// 	i32 _stride;
-// 	i32 _kernel_size;
-// 	i32 _padding;
-// 	tensor _weight; 
-// 	tensor _bias;
+// class MultiheadAttention: public Module{
+// 	i32 _num_heads; 
+// 	i32 _d_in;		//	embedding dimension of the input sequence
+// 	i32 _d_kq;		//	output dimension of the query and key weight matrices	
+// 	i32 _d_v;		//	output dimension of the value weight matrix	
+// 	tensor _w_k;	//	key weights; shape [d_in, d_kq] 
+// 	tensor _w_q; 	//	query weights; shape [d_in, d_kq]  
+// 	tensor _w_v; 	//	value weights; shape [d_in, d_v]
 // public: 
-// 	Conv2d() = default; 
-// 	Conv2d(i32 in_channels, i32 out_channels, i32 kernel_size, i32 stride = 1, i32 padding = 0);
+// 	MultiheadAttention() = default; 
+// 	MultiheadAttention(i32 num_heads, i32 d_in, i32 d_kq, i32 d_v);
 // 	tensor forward(const tensor& input) const override;
 // 	std::vector<tensor*> parameters()  override; 
 // 	std::unordered_map<std::string, const tensor*> state_dict() const override;
-//
 // };
-
-// class MultiheadAttention : public Module {};
-// class CausalAttention    : public Module {};
-// class CrossAttention     : public Module {};
-
-
-
-
 
 
 //	nn::Module factory
@@ -206,14 +194,9 @@ std::unique_ptr<Softmax>   make_softmax(i32 dim = -1);
 std::unique_ptr<Embedding> make_embedding(i32 num_embeddings, i32 embedding_dim);
 std::unique_ptr<LayerNorm> make_layernorm(i32 normalized_shape);
 std::unique_ptr<RMSNorm>   make_rmsnorm(i32 normalized_shape);
-std::unique_ptr<SelfAttention>   make_selfattention(i32 d_in, i32 d_kq, i32 d_v);
-
-
-// TODO 
-// std::unique_ptr<Conv2d>    make_conv2d(i32 in_channels, i32 out_channels, i32 kernel_size, i32 stride = 1, i32 padding = 0);
-// std::unique_ptr<MultiheadAttention> make_multiheadattention();
-// std::unique_ptr<CausalAttention>    make_causalattention();
-// std::unique_ptr<CrossAttention>     make_crossattention();
+std::unique_ptr<SelfAttention>       make_SA(i32 d_in, i32 d_kq, i32 d_v);
+std::unique_ptr<CausalSelfAttention> make_CSA(i32 d_in, i32 d_kq, i32 d_v);
+// std::unique_ptr<MultiheadAttention>  make_MHA(i32 num_heads, i32 d_in, i32 d_kq, i32 d_v);
 
 
 

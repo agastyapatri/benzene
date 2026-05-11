@@ -222,6 +222,39 @@ Self attention is initialized `num_heads` times with the same input shapes discu
 The advantage of MHA over SA with `dv > 1` is that each head in MHA can potentially learn to focus on different parts of the input sequence, capturing various aspects or relationships within the data. 
 
 
+**Procedure to Compute the Multi-Head Attention of an input sequence:** 
+
+1.  Tokenize the sentence into an input sequence of tokens.
+2.  Embed the input sequence, convert to a matrix of size `[sequence_length, embedding_dimension]`
+3.  Slice the embedded matrix into `num_heads` parts. Each Slice is now a matrix of size `[sequence_length, embedding_dimension / num_heads]`
+
+4.  for(int i = 0; i < num_heads; i++)
+    4.1 Define the input as - `input_i = input[:, i*(embedding_dimension/num_heads) : (i+i)*(embedding_dimension/num_heads)]`
+    4.1 Define the weight matrices - `W_iq, W_ik, W_iv`
+    4.2 Find the queries, keys, values by matmul - `queries_i = matmul(input_i, W_qi)`
+    4.2 Calculate the unnormalized attention weights `omega = matmul(q, keys.Transpose)`
+    4.3 Calculate the attention weights `alpha = softmax(sqrt(1/d_k)*omega_i)`
+    4.4 Compute the context vector `z = matmul(alpha, values)`
+
+
+
+
+### Causal Self Attention
+CSA is used by GPT style decoder only LLMs to generate text. CSA is also called Masked Self Attention. 
+CSA ensures that the outputs for a certain position in a sequence is based only on the known outputs at previous positions and not on future positions. 
+**It ensures that the prediction for each next word should only depend on the words that came before it**.
+
+
+**Procedure to Compute the Causal Self Attention of an input sequence:** 
+
+1.  Tokenize the sentence into an input sequence of tokens.
+2.  Embed the input sequence, convert to a matrix of size `[sequence_length, embedding_dimension]`
+3.  Define the weight matrices - `W_q, W_k, W_v`
+4.  Calculate `queries = matmul(input, W_q)`
+5.  Calculate the unnormalized attention weights `omega = matmul(queries, keys.Transpose)`
+6.  Calculate the masked attention scores: `omega_masked = omega * mask`. The mask is a matrix which is zeroed out along a diagonal depending on the index of the element in the input sequence.
+7.  Calculate the attention weights `alpha = softmax(sqrt(1/d_k)*omega)`
+8.  Compute the context vector `z_i = matmul(alpha_i, values)`
 
 
 

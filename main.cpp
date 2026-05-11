@@ -1,26 +1,20 @@
 #include "nn.hpp"
 #include "tensor.hpp"
-#define ROWS 1
-#define COLS 784
-#define EMBEDDING_DIM 768
-#define ITER 10000
-#define DIM0 0
-#define DIM1 1
+constexpr bz::u32 batch_size = 2;
+constexpr bz::u32 seq_len =  4;
+constexpr bz::u32 d_in =  8;
+constexpr bz::u32 d_kq =  8;
+constexpr bz::u32 d_v =  8;
 using tensor = bz::tensor;
 namespace nn = bz::nn;
 
 
 int main(void){
-	tensor::manual_seed(0);
-	tensor x = tensor::randn({10, EMBEDDING_DIM});
-	nn::Sequential seq;
-	seq.push_back(nn::make_linear(768, 768));
-	seq.push_back(nn::make_layernorm(EMBEDDING_DIM));
-	seq.push_back(nn::make_gelu());
-	tensor out = seq(x);
-	for(auto i : out.shape()){
-		std::cout << i << " ";
-	}
+	tensor::manual_seed(42);
+	tensor input = bz::tensor::randn({batch_size, seq_len, d_in});
+	nn::SelfAttention sa(d_in, d_kq, d_v);
+	tensor out = sa(input);
+	std::cout << out << std::endl;
 
 
 
@@ -28,10 +22,7 @@ int main(void){
 
 
 
-
-
-
-
+	return EXIT_SUCCESS;
 
 }
 

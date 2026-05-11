@@ -1,6 +1,9 @@
 #include "nn.hpp"
 #include "tensor.hpp"
+#include <bit>
+#include <cassert>
 #include <memory>
+#include <stdatomic.h>
 #include <string>
 #include <unordered_map>
 namespace bz::nn{
@@ -142,16 +145,50 @@ std::unordered_map<std::string, const tensor*> RMSNorm::state_dict() const {
 	return sd;
 }
 
-//	TODO 
-// Conv2d::Conv2d(i32 in_channels, i32 out_channels, i32 kernel_size, i32 stride, i32 padding){
-// 	_in_channels = in_channels;
-// 	_out_channels = out_channels; 
-// 	_stride = stride;
-// 	_kernel_size = kernel_size;
-// 	_padding = padding;
-// 	_weight = tensor::randn({_kernel_size, _kernel_size});
-// }
 
+
+SelfAttention::SelfAttention(i32 d_in, i32 d_kq, i32 d_v){
+	_d_in = d_in;
+	_d_kq = d_kq;
+	_d_v  = d_v;
+	_w_q = tensor::randu_he({_d_in, _d_kq}, _d_in);
+	_w_k = tensor::randu_he({_d_in, _d_kq}, _d_in);
+	_w_v = tensor::randu_he({_d_in, _d_v}, _d_in);
+}
+
+std::vector<tensor*> SelfAttention::parameters(){
+    std::vector<tensor*> params;
+    params.push_back(&_w_q);
+    params.push_back(&_w_k);
+    params.push_back(&_w_v);
+    return params;
+}
+
+std::unordered_map<std::string, const tensor*> SelfAttention::state_dict() const {
+	std::unordered_map<std::string, const tensor*> sd ;
+	sd["w_q.weight"] = &_w_q;
+	sd["w_k.weight"] = &_w_k;
+	sd["w_v.weight"] = &_w_v;
+	return sd;
+}
+
+
+void printshape(tensor t){
+	for(auto i : t.shape())
+		std::cout << i << " ";
+	std::cout << std::endl;
+}
+
+
+tensor SelfAttention::forward(const tensor& input) const {
+	tensor keys = bz::matmul(input, _w_k);	 	//	batch_size x seq_len x d_kq
+	tensor queries = bz::matmul(input, _w_q); 	//	batch_size x seq_len x d_kq
+	tensor values = bz::matmul(input, _w_v);	//	batch_size x seq_len x d_v
+	tensor attn_scores = bz::matmul(queries, bz::transpose(keys, keys.ndim() - 1, keys.ndim() - 2)); // batch_size x seq_len x seq_len
+	tensor attn_weights = bz::softmax(attn_scores *std::sqrtf(1.0f / _d_kq) , -1); 					 //	batch_size x seq_len x seq_len
+	tensor context_vec = bz::matmul(attn_weights, values); 											 // batch_size x seq_len x d_v
+	return context_vec;
+}
 
 
 
@@ -205,6 +242,9 @@ std::unique_ptr<RMSNorm> make_rmsnorm(i32 normalized_shape){
 	return std::make_unique<RMSNorm>(norm_shape);
 }
 
+std::unique_ptr<SelfAttention>   make_selfattention(i32 d_in, i32 d_kq, i32 d_v){
+	return std::make_unique<SelfAttention>(d_in, d_kq, d_v);
+}
 
 
 

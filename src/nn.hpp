@@ -140,6 +140,21 @@ public:
 	std::unordered_map<std::string, const tensor*> state_dict() const override;
 };
 
+class SelfAttention: public Module{
+	i32 _d_in;		//	embedding dimension of the input sequence
+	i32 _d_kq;		//	output dimension of the query and key weight matrices	
+	i32 _d_v;		//	output dimension of the value weight matrix	
+	tensor _w_k;	//	key weights; shape [d_in, d_kq] 
+	tensor _w_q; 	//	query weights; shape [d_in, d_kq]  
+	tensor _w_v; 	//	value weights; shape [d_in, d_v]
+public: 
+	SelfAttention() = default; 
+	SelfAttention(i32 d_in, i32 d_kq, i32 d_v);
+	tensor forward(const tensor& input) const override;
+	std::vector<tensor*> parameters()  override; 
+	std::unordered_map<std::string, const tensor*> state_dict() const override;
+};
+
 
 
 
@@ -191,6 +206,7 @@ std::unique_ptr<Softmax>   make_softmax(i32 dim = -1);
 std::unique_ptr<Embedding> make_embedding(i32 num_embeddings, i32 embedding_dim);
 std::unique_ptr<LayerNorm> make_layernorm(i32 normalized_shape);
 std::unique_ptr<RMSNorm>   make_rmsnorm(i32 normalized_shape);
+std::unique_ptr<SelfAttention>   make_selfattention(i32 d_in, i32 d_kq, i32 d_v);
 
 
 // TODO 

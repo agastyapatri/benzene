@@ -210,11 +210,11 @@ std::unordered_map<std::string, const tensor*> CausalSelfAttention::state_dict()
 
 
 
-static inline tensor make_mask(i32 size){
+static inline tensor _make_mask(i32 size){
 	tensor out({size, size});
 	for(int i = 0; i < size; i++){
 		for(int j = 0; j < size; j++){
-			out.at({i, j}) = (i >=  j) ? 1 : 0;
+			out.at({i, j}) = (i >=  j) ? 0 : -std::numeric_limits<float>::infinity();
 		}
 	}
 	return out;
@@ -225,20 +225,65 @@ tensor CausalSelfAttention::forward(const tensor& input) const {
 	tensor queries = bz::matmul(input, _w_q); 	//	batch_size x seq_len x d_kq
 	tensor values = bz::matmul(input, _w_v);	//	batch_size x seq_len x d_v
 	tensor attn_scores = bz::matmul(queries, bz::transpose(keys, keys.ndim() - 1, keys.ndim() - 2)); // batch_size x seq_len x seq_len
+	attn_scores = attn_scores + _make_mask(attn_scores.shape()[attn_scores.ndim() -1]); 			 // masking the attention scores
 	tensor attn_weights = bz::softmax(attn_scores *std::sqrtf(1.0f / _d_kq) , -1); 					 //	batch_size x seq_len x seq_len
-	attn_weights = attn_weights * make_mask(attn_weights.shape()[attn_weights.ndim() - 1]);			 // masking the attention weights
-	tensor row_sums = attn_weights.sum(attn_weights.ndim() - 1);	
-	
-	//	TODO: figure this shit out. Broadcasting incompatibility for these shapes.
-	attn_weights = attn_weights / row_sums;
 	tensor context_vec = bz::matmul(attn_weights, values); 											 // batch_size x seq_len x d_v
 	return context_vec;
 }
 
 
+MultiheadAttention::MultiheadAttention(i32 num_heads, i32 d_in, i32 d_kq, i32 d_v){
+	_num_heads = num_heads; 
+	_d_in = d_in; 
+	_d_kq = d_kq; 
+	_d_v = d_v;
+	_w_k = tensor::randu_he({d_in, num_heads*d_kq}, d_in);  
+	_w_q = tensor::randu_he({d_in, num_heads*d_kq}, d_in);
+	_w_v = tensor::randu_he({d_in, num_heads*d_v} , d_in);
+	_w_o = tensor::randu_he({num_heads*d_v, d_in} , num_heads*d_v);
+} 
+
+
+std::vector<tensor*> MultiheadAttention::parameters(){
+    std::vector<tensor*> params;
+    params.push_back(&_w_q);
+    params.push_back(&_w_k);
+    params.push_back(&_w_v);
+    params.push_back(&_w_o);
+    return params;
+}
+
+std::unordered_map<std::string, const tensor*> MultiheadAttention::state_dict() const {
+	std::unordered_map<std::string, const tensor*> sd ;
+	sd["w_q.weight"] = &_w_q;
+	sd["w_k.weight"] = &_w_k;
+	sd["w_v.weight"] = &_w_v;
+	sd["w_o.weight"] = &_w_o;
+	return sd;
+}
+
+
+tensor MultiheadAttention::forward(const tensor& input) const{
+	tensor keys = bz::matmul(input, _w_k);	 	//	batch_size x seq_len x num_heads*d_kq
+	tensor queries = bz::matmul(input, _w_q); 	//	batch_size x seq_len x num_heads*d_kq
+	tensor values = bz::matmul(input, _w_v);	//	batch_size x seq_len x num_heads*d_v
+
+	for(auto i : keys.shape()){
+		std::cout << i << " ";
+	}
+	std::cout << std::endl;
+	
 
 
 
+
+
+
+
+
+	tensor out({1,1});
+	return out;
+}
 
 
 
@@ -295,6 +340,9 @@ std::unique_ptr<CausalSelfAttention>   make_CSA(i32 d_in, i32 d_kq, i32 d_v){
 	return std::make_unique<CausalSelfAttention>(d_in, d_kq, d_v);
 }
 
+std::unique_ptr<MultiheadAttention>  make_MHA(i32 num_heads, i32 d_in, i32 d_kq, i32 d_v){
+	return std::make_unique<MultiheadAttention>(num_heads,d_in,  d_kq,  d_v);
+}
 
 
 

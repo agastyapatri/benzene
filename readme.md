@@ -38,7 +38,7 @@ NOTES:
 2.  Neural Network Primitives 
 -   ~Linear Layer~
 -   ~GELU~
--   Causal Self Attention
+-   ~Causal Self Attention~
 -   Multi Head Self Attention
 -   Feed Forward Networks 
 -   Transformer Block - attention + ffn + layernorm
@@ -237,6 +237,47 @@ The advantage of MHA over SA with `dv > 1` is that each head in MHA can potentia
     4.4 Compute the context vector `z = matmul(alpha, values)`
 
 
+Implementing efficient MHA: 
+
+1.  Tokenize the sentence into an input sequence of tokens.
+2.  Embed the input sequence, convert to a matrix of size `[sequence_length, embedding_dimension]`
+3.  Define `w_k, w_q, w_v` with the the shapes: 
+    ```
+    w_k: [d_in, num_heads*d_kq]
+    w_q: [d_in, num_heads*d_kq]
+    w_v: [d_in, num_heads*d_kv]
+    w_o: [num_heads*d_kv, d_in]
+    ```
+4.  Find the queries, keys, values by matmul:
+    ```
+    queries = matmul(input, w_q)    [batch_size, sequence_length, num_heads*d_kq]
+    keys = matmul(input, w_k)       [batch_size, sequence_length, num_heads*d_kq]
+    values = matmul(input, w_v)     [batch_size, sequence_length, num_heads*d_v] 
+    ```
+
+5.  Reshape the queries, keys, values: 
+    ```
+    queries-> [batch_size, sequence_length, num_heads, d_kq] 
+    keys   -> [batch_size, sequence_length, num_heads, d_kq] 
+    values -> [batch_size, sequence_length, num_heads, d_v]  
+    ```
+6.  Transpose the queries, keys, values: 
+    ```
+    queries-> [batch_size, num_heads, sequence_length, d_kq] 
+    keys   -> [batch_size, num_heads, sequence_length, d_kq] 
+    values -> [batch_size, num_heads, sequence_length, d_v]  
+    ```
+
+7.  Compute attention across all heads: 
+    ```
+    attn_scores = matmul(queries, keys.T) → [batch, num_heads, seq_len, seq_len]
+    add causal mask
+    attn_weights = softmax(attn_scores / sqrt(d_kq))
+    context = matmul(attn_weights, values) → [batch, num_heads, seq_len, d_v]
+    ```
+8.  Transpose back to `[batch_size, sequence_length, num_heads, d_v]`
+9.  Reshape to `[batch_size, sequence_length, num_heads*d_v]`
+10. Output = `matmul(context, w_o) -> [batch_size, sequence_length, d_in]`
 
 
 ### Causal Self Attention
@@ -255,17 +296,6 @@ CSA ensures that the outputs for a certain position in a sequence is based only 
 6.  Calculate the masked attention scores: `omega_masked = omega * mask`. The mask is a matrix which is zeroed out along a diagonal depending on the index of the element in the input sequence.
 7.  Calculate the attention weights `alpha = softmax(sqrt(1/d_k)*omega)`
 8.  Compute the context vector `z_i = matmul(alpha_i, values)`
-
-
-
-
-
-
-
-
-
-
-
 
 
 

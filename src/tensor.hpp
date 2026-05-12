@@ -45,7 +45,6 @@ tensor transpose(const tensor& t, u32 dim0, u32 dim1);
 tensor reshape(const tensor& t, vi32 new_shape);
 
 
-
 tensor matmul(const tensor& inp1, const tensor& inp2);
 // tensor bmm(const tensor& inp1, const tensor& inp2);
 tensor dot(const tensor& inp1, const tensor& inp2);
@@ -184,6 +183,11 @@ public:
 	// manipulations
 	friend tensor transpose(const tensor& t, u32 dim0, u32 dim1);
 	friend tensor reshape(const tensor& t, vi32 new_shape);
+
+
+	//	TODO 
+	void T(u32 dim0, u32 dim1);
+	void reshape(vi32 new_shape);
 
 	tensor gather(const tensor& indices, i32 dim = 0) const ;
 	tensor gather(const vi32 indices, i32 dim = 0) const ;

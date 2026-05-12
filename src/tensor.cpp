@@ -248,9 +248,7 @@ tensor tensor::arithmetic(const tensor& inp2, f32 op) const {
 	if (inp2._ndim == 1 && this->_shape.back() == inp2._shape[0]) {
 		i32 N = inp2._shape[0];
 		i32 total_rows = this->_numel / N; 
-		
 		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
-		
 		#pragma omp parallel for
 		for (i32 i = 0; i < total_rows; i++) {
 			cblas_saxpy(
@@ -263,6 +261,27 @@ tensor tensor::arithmetic(const tensor& inp2, f32 op) const {
 		return out;
 	}
 
+
+
+	//	(M, K, N) + (K, N)
+	if(this->_ndim == 3 && inp2._ndim == 2){
+		i32 N = inp2._shape[0]*inp2._shape[1];
+		i32 num_iters = this->_shape[0];
+		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
+		#pragma omp parallel for
+		for(i32 i = 0; i < num_iters; i++){
+			// for(i32 j = 0; j < N; j++){
+			// 	out._data[i*N + j] = this->_data[i*N + j] * inp2._data[j]; 
+			// }
+			cblas_saxpy(
+				N, 
+				op, 
+				inp2._data.data(), 1, 
+				out._data.data() + (i*N), 1
+			);
+		}
+		return out;
+	}
 
 	if(inp2._numel == 1){
 		float scalar = op * inp2._data[0];
@@ -307,10 +326,6 @@ tensor tensor::operator*(const tensor& other) const {
 	// Generalized (..., N) + (N) case
 	if (other._ndim == 1 && this->_shape.back() == other._shape[0]) {
 		i32 N = other._shape[0];
-		i32 total_rows = this->_numel / N; 
-		
-		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
-		
 		#pragma omp parallel for
 		for(u64 i = 0; i < _numel; i++)
 			out._data[i] = this->_data[i] * other._data[i % N];
@@ -840,6 +855,25 @@ tensor transpose(const tensor& t, u32 dim0, u32 dim1){
 	return out;
 }
 
+
+void tensor::T(u32 dim0, u32 dim1){
+	std::swap(this->_shape[dim0], this->_shape[dim1]);
+	this->compute_strides();
+	vf32 _old_data = this->_data;
+
+	for(bz::u64 i = 0; i < this->_numel; i++){
+		bz::vi32 original_loc = this->flat_idx_to_coord(i);
+		bz::vi32 new_loc = original_loc;
+		std::swap(new_loc[dim0], new_loc[dim1]);
+		i32 offset = 0;
+		for(bz::i32 j = 0; j < this->_ndim; j++){
+			offset += new_loc[j] * this->_strides[j];
+		}
+		this->_data[offset] = _old_data[i];
+	}
+}
+
+
 tensor reshape(const tensor& t, vi32 new_shape){
 	u64 new_numel = 1;
 	for(int i : new_shape) new_numel *= i;
@@ -853,6 +887,19 @@ tensor reshape(const tensor& t, vi32 new_shape){
 	std::copy(t._data.begin(), t._data.end(), out._data.begin());
 	return out;
 }
+
+
+void tensor::reshape(vi32 new_shape){
+	u64 new_numel = 1;
+	for(int i : new_shape) new_numel *= i;
+	assert(new_numel == this->_numel);
+	this->_shape = new_shape;
+	this->_ndim  = new_shape.size(); 
+	this->_numel = new_numel;
+	this->compute_strides();
+}
+
+
 
 
 tensor softmax(const tensor& t, i32 dim) {
@@ -973,19 +1020,21 @@ tensor tensor::gather(const tensor& indices, i32 dim) const {
 	if(_ndim != 2){
 		throw std::runtime_error("tensor::gather is currently only supported when _ndim == 2");
 	}
-
-	i32 nrows = indices._numel;
-	i32 ncols = _shape[1];
-	tensor out({(i32)nrows, (i32)ncols});
-
-	for(i32 i = 0; i < nrows; i++){
-		i32 current_index = indices._data[i];
-		assert(current_index >= 0 && current_index <= _shape[0]);
-		const float* source_row_start = _data.data() + (current_index * ncols);
-		float* destination_row = out._data.data() + (i * ncols);
-		std::copy(source_row_start, source_row_start + ncols, destination_row);
+	
+	if(dim == 0){
+		i32 nrows = indices._numel;
+		i32 ncols = this->_shape[this->_ndim - 1];
+		tensor out({nrows, ncols});
+		for(i32 i = 0; i < nrows; i++){
+			i32 current_index = indices._data[i];
+			assert(current_index >= 0 && current_index <= _shape[_ndim - 2]);
+			const float* source_row_start = _data.data() + (current_index * ncols);
+			float* destination_row = out._data.data() + (i * ncols);
+			std::copy(source_row_start, source_row_start + ncols, destination_row);
+		}
+		return out;
 	}
-	return out;
+	throw std::runtime_error("bz::tensor::gather only works for dim == 0");
 }
 
 tensor tensor::gather(const vi32 indices, i32 dim) const {
@@ -993,17 +1042,20 @@ tensor tensor::gather(const vi32 indices, i32 dim) const {
 	if(_ndim != 2){
 		throw std::runtime_error("tensor::gather is currently only supported when _ndim == 2");
 	}
-	i32 nrows = indices.size();
-	i32 ncols = _shape[1];
-	tensor out({(i32)nrows, (i32)ncols});
-	for(i32 i = 0; i < nrows; i++){
-		i32 current_index = indices.data()[i];
-		assert(current_index >= 0 && current_index <= _shape[0]);
-		const float* source_row_start = _data.data() + (current_index * ncols);
-		float* destination_row = out._data.data() + (i * ncols);
-		std::copy(source_row_start, source_row_start + ncols, destination_row);
+	if(dim == 0){
+		i32 nrows = indices.size();
+		i32 ncols = _shape[1];
+		tensor out({(i32)nrows, (i32)ncols});
+		for(i32 i = 0; i < nrows; i++){
+			i32 current_index = indices.data()[i];
+			assert(current_index >= 0 && current_index <= _shape[0]);
+			const float* source_row_start = _data.data() + (current_index * ncols);
+			float* destination_row = out._data.data() + (i * ncols);
+			std::copy(source_row_start, source_row_start + ncols, destination_row);
+		}
+		return out;
 	}
-	return out;
+	throw std::runtime_error("bz::tensor::gather only works for dim == 0");
 }
 
 

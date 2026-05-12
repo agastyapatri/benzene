@@ -166,21 +166,22 @@ public:
 	std::unordered_map<std::string, const tensor*> state_dict() const override;
 };
 
-// class MultiheadAttention: public Module{
-// 	i32 _num_heads; 
-// 	i32 _d_in;		//	embedding dimension of the input sequence
-// 	i32 _d_kq;		//	output dimension of the query and key weight matrices	
-// 	i32 _d_v;		//	output dimension of the value weight matrix	
-// 	tensor _w_k;	//	key weights; shape [d_in, d_kq] 
-// 	tensor _w_q; 	//	query weights; shape [d_in, d_kq]  
-// 	tensor _w_v; 	//	value weights; shape [d_in, d_v]
-// public: 
-// 	MultiheadAttention() = default; 
-// 	MultiheadAttention(i32 num_heads, i32 d_in, i32 d_kq, i32 d_v);
-// 	tensor forward(const tensor& input) const override;
-// 	std::vector<tensor*> parameters()  override; 
-// 	std::unordered_map<std::string, const tensor*> state_dict() const override;
-// };
+class MultiheadAttention: public Module{
+	i32 _num_heads; //	number of attention heads 
+	i32 _d_in;		//	embedding dimension of the input sequence
+	i32 _d_kq;		//	output dimension of the query and key weight matrices	
+	i32 _d_v;		//	output dimension of the value weight matrix	
+	tensor _w_k;	//	tensor of key weights; shape    [d_in, num_heads*d_kq] 
+	tensor _w_q; 	//	tensor of query weights; shape  [d_in, num_heads*d_kq]  
+	tensor _w_v; 	//	tensor of value weights; shape  [d_in, num_heads*d_v]
+	tensor _w_o; 	//	tensor of output weights; shape [num_heads*dv, d_in]
+public: 
+	MultiheadAttention() = default; 
+	MultiheadAttention(i32 num_heads, i32 d_in, i32 d_kq, i32 d_v);
+	tensor forward(const tensor& input) const override;
+	std::vector<tensor*> parameters()  override; 
+	std::unordered_map<std::string, const tensor*> state_dict() const override;
+};
 
 
 //	nn::Module factory
@@ -196,7 +197,7 @@ std::unique_ptr<LayerNorm> make_layernorm(i32 normalized_shape);
 std::unique_ptr<RMSNorm>   make_rmsnorm(i32 normalized_shape);
 std::unique_ptr<SelfAttention>       make_SA(i32 d_in, i32 d_kq, i32 d_v);
 std::unique_ptr<CausalSelfAttention> make_CSA(i32 d_in, i32 d_kq, i32 d_v);
-// std::unique_ptr<MultiheadAttention>  make_MHA(i32 num_heads, i32 d_in, i32 d_kq, i32 d_v);
+std::unique_ptr<MultiheadAttention>  make_MHA(i32 num_heads, i32 d_in, i32 d_kq, i32 d_v);
 
 
 

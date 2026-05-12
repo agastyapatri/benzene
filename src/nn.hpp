@@ -5,7 +5,6 @@
 #define BZ_NN_HPP
 #include "tensor.hpp"
 
-#include <initializer_list>
 #include <memory> 
 #include <unordered_map>
 

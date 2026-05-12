@@ -262,27 +262,27 @@ std::unordered_map<std::string, const tensor*> MultiheadAttention::state_dict() 
 	return sd;
 }
 
-
+//	TODO: fix this function; fix tesnor::T 
 tensor MultiheadAttention::forward(const tensor& input) const{
-	tensor keys = bz::matmul(input, _w_k);	 	//	batch_size x seq_len x num_heads*d_kq
-	tensor queries = bz::matmul(input, _w_q); 	//	batch_size x seq_len x num_heads*d_kq
-	tensor values = bz::matmul(input, _w_v);	//	batch_size x seq_len x num_heads*d_v
-
-	for(auto i : keys.shape()){
-		std::cout << i << " ";
-	}
-	std::cout << std::endl;
-	
-
-
-
-
-
-
-
-
-	tensor out({1,1});
-	return out;
+	i32 bs = input.shape()[0];
+	i32 sl = input.shape()[1];
+	tensor queries = bz::matmul(input, _w_q); 		//	batch_size x seq_len x num_heads*d_kq
+	tensor keys = bz::matmul(input, _w_k);	 		//	batch_size x seq_len x num_heads*d_kq
+	tensor values = bz::matmul(input, _w_v);		//	batch_size x seq_len x num_heads*d_v
+	queries.reshape({bs, sl, _num_heads, _d_kq});   //	batch_size x seq_len x num_heads x d_kq
+	keys.reshape({bs, sl, _num_heads, _d_kq});	    //	batch_size x seq_len x num_heads x d_kq 	
+	values.reshape({bs, sl, _num_heads, _d_v});     //	batch_size x seq_len x num_heads x d_v
+	queries = bz::transpose(queries, 1, 2);
+	keys = bz::transpose(keys, 1, 2);
+	values = bz::transpose(values, 1, 2);
+	keys = bz::transpose(keys, keys.ndim() - 1, keys.ndim() - 2);
+	tensor attn_scores = bz::matmul(queries, keys);	//	batch_size x num_heads x seq_len x seq_len
+	attn_scores = attn_scores + _make_mask(attn_scores.shape()[attn_scores.ndim() -1]);
+	tensor attn_weights = bz::softmax(attn_scores *std::sqrtf(1.0f / _d_kq) , -1); 					 
+	tensor context_vec = bz::matmul(attn_weights, values);		//   batch, num_heads, seq_len, d_v  											 
+	context_vec = bz::transpose(context_vec, 1, 2);
+	context_vec.reshape({bs, sl, _num_heads*_d_v});
+	return bz::matmul(context_vec, _w_o);
 }
 
 

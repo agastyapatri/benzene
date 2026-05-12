@@ -15,7 +15,7 @@ int main(void){
 	tensor t1 = bz::tensor::randn({batch_size, seq_len, d_in});
 	nn::MultiheadAttention mha(num_heads, d_in, d_kq, d_v);
 	tensor out = mha(t1);
-	// std::cout << out << std::endl;
+	std::cout << out << std::endl;
 
 	
 

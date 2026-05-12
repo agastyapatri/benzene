@@ -2,11 +2,14 @@
 #include <algorithm>
 #include <cassert>
 #include <cfloat>
+#include <functional>
 #include <initializer_list>
+#include <numeric>
 #include <random> 
 #include <cmath>
 #include <openblas/cblas.h> 
 #include <stdexcept>
+#include <iomanip>
 
 namespace bz{
 
@@ -145,7 +148,7 @@ static inline void print_tensor_recursive(std::ostream& os, const tensor& t, int
 	if(dim == t.ndim() - 1){
 		os << "[";
 		for(int i = 0; i < t.shape()[dim]; i++){
-			os << t.data()[offset + i * t.strides()[dim]];
+			os << std::setw(10) << std::fixed << std::setprecision(7) << t.data()[offset + i * t.strides()[dim]];
 			if(i < t.shape()[dim] - 1) os << ", ";
 		}
 		os << "]";
@@ -261,18 +264,13 @@ tensor tensor::arithmetic(const tensor& inp2, f32 op) const {
 		return out;
 	}
 
-
-
-	//	(M, K, N) + (K, N)
-	if(this->_ndim == 3 && inp2._ndim == 2){
+	//	(....,  K, N) + (K, N)
+	if(this->_ndim > 2 && inp2._ndim == 2){
 		i32 N = inp2._shape[0]*inp2._shape[1];
-		i32 num_iters = this->_shape[0];
+		i32 num_iters = std::accumulate(this->_shape.begin(), this->_shape.end() - 2, 1, std::multiplies<i32>()); 
 		std::copy(this->_data.begin(), this->_data.end(), out._data.begin());
 		#pragma omp parallel for
 		for(i32 i = 0; i < num_iters; i++){
-			// for(i32 j = 0; j < N; j++){
-			// 	out._data[i*N + j] = this->_data[i*N + j] * inp2._data[j]; 
-			// }
 			cblas_saxpy(
 				N, 
 				op, 

@@ -46,7 +46,6 @@ tensor reshape(const tensor& t, vi32 new_shape);
 
 
 tensor matmul(const tensor& inp1, const tensor& inp2);
-// tensor bmm(const tensor& inp1, const tensor& inp2);
 tensor dot(const tensor& inp1, const tensor& inp2);
 tensor mm(const tensor& inp1, const tensor& inp2);
 tensor mv(const tensor& inp1, const tensor& inp2);
@@ -156,7 +155,6 @@ public:
 	//	tensor tensor multiplications
 	friend tensor matmul(const tensor& inp1, const tensor& inp2);
 	friend tensor mm(const tensor& inp1, const tensor& inp2);
-	friend tensor bmm(const tensor& inp1, const tensor& inp2);
 	friend tensor mv(const tensor& inp1, const tensor& inp2);
 	friend tensor dot(const tensor& inp1, const tensor& inp2);
 
@@ -185,7 +183,6 @@ public:
 	friend tensor reshape(const tensor& t, vi32 new_shape);
 
 
-	//	TODO 
 	void T(u32 dim0, u32 dim1);
 	void reshape(vi32 new_shape);
 

@@ -39,7 +39,7 @@ NOTES:
 -   ~Linear Layer~
 -   ~GELU~
 -   ~Causal Self Attention~
--   Multi Head Self Attention
+-   ~Multi Head Self Attention~
 -   Feed Forward Networks 
 -   Transformer Block - attention + ffn + layernorm
 
@@ -75,7 +75,7 @@ NOTES:
 
 
 ##  Immediate Concerns 
-1.  Learn about and implement the `bz::nn::MultiheadAttention` module 
+1.  ~Learn about and implement the `bz::nn::MultiheadAttention` module~
 2.  MLP Block: `bz::nn::Linear` and `bz::nn::GELU` stacked together (trivial)
 3.  Implement the transformer block; test how well `bz::nn::Sequential` works with all modules created up to this point.
 4.  Build `GPT-2 Small` architecture while making sure to understand the decisions made during the building of this model. Testing of the forward pass will be done with dummy data taken from microgpt-c.

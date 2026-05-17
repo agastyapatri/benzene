@@ -8,17 +8,25 @@ set(BLA_VENDOR OpenBLAS)
 find_package(BLAS REQUIRED)
 find_package(OpenMP REQUIRED)
 
-
-#	Gathering source files and telling cmake to build all sources and main.cpp into a single file called benzene.
+#	Gathering source files 
 set(SOURCES
 	src/tensor.cpp 
 	src/nn.cpp
+	gpt2/gpt2.cpp
 )
-add_compile_options(-O3  -march=native -fopenmp)  
+
 add_executable(benzene main.cpp ${SOURCES})
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options(benzene PRIVATE -O0 -g)
+else()
+    target_compile_options(benzene PRIVATE -O3 -march=native)
+endif()
+
 
 #	include directories: this is crucial
 target_include_directories(benzene PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(benzene PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/gpt2)
 
 #	linking the math library
 target_link_libraries(benzene PRIVATE ${BLAS_LIBRARIES} OpenMP::OpenMP_CXX)

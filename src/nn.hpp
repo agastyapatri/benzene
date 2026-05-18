@@ -184,14 +184,6 @@ public:
 
 
 
-class Transformer: public Module{
-	i32 _num_heads; 
-	i32 _embd_dim; 
-public: 
-	Transformer() = default; 
-
-
-};
 
 
 //	nn::Module factory

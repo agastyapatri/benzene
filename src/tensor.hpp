@@ -76,7 +76,6 @@ class tensor{
 
 	tensor arithmetic(const tensor& inp2, f32 op) const ; 
 
-
 public: 
 	tensor(vi32 shape); 
 	tensor(vi32 shape, std::initializer_list<float> values); 
@@ -84,6 +83,7 @@ public:
 
 
 	bool is_contiguous() const;
+	tensor contiguous() const;
 	//	seeding the RNG 
 	static void manual_seed(u32 seed){rand_engine.seed(seed);}
 

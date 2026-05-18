@@ -55,6 +55,29 @@ bool tensor::is_contiguous() const{
 	return true;
 }
 
+// TODO: Finish this
+tensor tensor::contiguous() const {
+	if(is_contiguous())	return *this;
+	
+	tensor out = *this;
+	vi32 correct_strides(_ndim , 1); 
+	for(int i = _ndim - 2; i >= 0; i--){
+		correct_strides[i] = correct_strides[i + 1] * _shape[i + 1];
+	}
+	out._strides = correct_strides;
+	for(u64 i = 0; i < out._numel; i++){
+		vi32 coords = out.flat_idx_to_coord(i);
+		i32 source_offset = 0; 
+		for(i32 d = 0; d < _ndim; d++)	source_offset += coords[d]*this->_strides[d];
+		out._data[i] = this->_data[source_offset];
+	}
+	return out;
+}
+
+
+
+
+
 vi32 tensor::flat_idx_to_coord(u64 idx) const {
 	vi32 coords(this->_ndim, 0);
 	for(i32 j = 0; j < this->_ndim; j++){
@@ -852,6 +875,9 @@ tensor transpose(const tensor& t, u32 dim0, u32 dim1){
 
 	return out;
 }
+
+
+
 
 
 void tensor::T(u32 dim0, u32 dim1){

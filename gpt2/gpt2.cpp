@@ -1,6 +1,7 @@
 #include "gpt2.hpp"
 #include "nn.hpp"
 #include <memory>
+#include <unordered_map>
 
 namespace bz::gpt2{
 
@@ -34,12 +35,39 @@ std::unordered_map<std::string, const tensor*> MLPBlock::state_dict() const {
 }
 
 
+tensor TransformerBlock::forward(const tensor& input) const{
+	tensor out = _ln(input);
+	out = _mha(out);
+	out = _mlp(out);
+	out = out + input;
+	tensor residual = out;
+	out = _ln(out);
+	out = _mlp(out);
+	out = out + residual;
+	return out;
+}
 
+std::vector<tensor*> TransformerBlock::parameters(){
+    std::vector<tensor*> params;
+	for(auto _param : _mlp.parameters()){
+		params.push_back(_param);
+	}
+	for(auto _param : _mha.parameters()){
+		params.push_back(_param);
+	}
+    return params;
+}
 
-
-
-
-
+std::unordered_map<std::string, const tensor*> TransformerBlock::state_dict() const {
+	std::unordered_map<std::string, const tensor*> sd; 
+	for(const auto& [key, value] : _mlp.state_dict()){
+		sd[key] = value;
+	}
+	for(const auto& [key, value] : _mha.state_dict()){
+		sd[key] = value;
+	}
+	return sd;
+}
 
 
 

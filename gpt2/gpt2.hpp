@@ -38,6 +38,27 @@ public:
 
 
 
+class TransformerBlock: public nn::Module{
+	u32 _num_heads; 
+	u32 _embd_dim; 
+	MLPBlock _mlp;
+	nn::MultiheadAttention _mha;
+	nn::LayerNorm _ln;
+public: 
+	TransformerBlock() = default; 
+	TransformerBlock(u32 num_heads, u32 embedding_dim, u32 d_kq, u32 d_v) : 
+		_num_heads(num_heads), 
+		_embd_dim(embedding_dim), 
+		_mlp(embedding_dim), 
+		_mha(num_heads, embedding_dim, d_kq, d_v),
+		_ln({static_cast<i32>(embedding_dim)}){};
+	tensor forward(const tensor& input) const override;
+	std::vector<tensor*> parameters()  override; 
+	std::unordered_map<std::string, const tensor*> state_dict() const override;
+
+
+
+};
 
 
 

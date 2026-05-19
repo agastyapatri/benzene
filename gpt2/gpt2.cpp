@@ -133,7 +133,22 @@ std::unordered_map<std::string, const tensor*> GPT2::state_dict() const {
 
 
 tensor GPT2::forward(const tensor& input) const {
-	return input;
+	tensor out = input;
+	// if(out.ndim() == 2)	out.unsqueeze();
+	i32 _seq_len = input.shape()[input.ndim() - 1];
+	tensor token_embeddings = _token_embedding(input);
+	tensor positions = tensor::linspace(0, _seq_len, _seq_len); 
+	tensor position_embeddings = _positional_embedding(positions);
+	out = token_embeddings + position_embeddings;
+	if(out.ndim() == 2)	out.unsqueeze();	// if it is not a batched input, introduce a batch size of 1
+
+	for(u32 i = 0; i < _num_trans_blocks; i++){
+		out = _transformers[i]->forward(out);
+	}
+	out = _final_layer_norm(out);
+	out = _final_projection(out);
+	out = bz::softmax(out, -1);
+	return out;
 }
 
 

@@ -1096,4 +1096,26 @@ tensor unsqueeze(const tensor& t){
 }
 
 
+tensor tensor::linspace(f32 start, f32 end, i32 num){
+	tensor out({num});
+	f32 res = (end - start) / (f32)num;
+	for(i32 i = 0; i < num; i++)
+		out._data[i] = start + i*res;
+	return out;
+}
+
+tensor tensor::arange(f32 start, f32 end, f32 step){
+	i32 num = (end - start) / step;
+	tensor out({num});
+	for(i32 i = 0; i < num; i++)
+		out._data[i] = start + i*step;
+	return out;
+}
+
+
+
+
+
+
+
 }

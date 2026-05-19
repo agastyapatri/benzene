@@ -131,6 +131,8 @@ public:
 	static tensor randu_he 	  (vi32 shape, u32 fan_in);
 	static tensor randu_xavier (vi32 shape, u32 fan_in, u32 fan_out);
 	static tensor eye(const i32 size);
+	static tensor linspace(f32 start, f32 end, i32 num);
+	static tensor arange(f32 start, f32 end, f32 step);
 
 	//	transcendentals; inplace
 	void log_();

@@ -6,7 +6,7 @@ namespace gpt2 = bz::gpt2;
 using tensor = bz::tensor;
 
 constexpr bz::i32 batch_size = 1;
-constexpr bz::i32 seq_len =  4;
+constexpr bz::i32 seq_len =  128;
 constexpr bz::i32 embd_dim = 768;
 constexpr bz::i32 num_heads =  2;
 
@@ -20,8 +20,8 @@ constexpr bz::i32 num_heads =  2;
 
 
 int main(){
-	tensor t1({1, 4}, {0.0f, 1.0f, 2.0f, 3.0f});
-	auto start = std::chrono::high_resolution_clock::now();
+	// tensor tokens({1, 4}, {0.0f, 1.0f, 2.0f, 3.0f});
+	tensor tokens = tensor::linspace(0, seq_len, seq_len);
 	gpt2::GPT2 gpt2small(
 			gpt2::gpt2_small_embd_dim, 
 			gpt2::gpt2_small_num_heads, 
@@ -29,12 +29,21 @@ int main(){
 			gpt2::gpt2_small_vocab_size, 
 			gpt2::gpt2_small_context_len
 			);
+	auto start = std::chrono::high_resolution_clock::now();
+	tensor out = gpt2small(tokens);
 	auto end = std::chrono::high_resolution_clock::now();
 	auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+
+	for(auto i : out.shape())
+		std::cout << i << " ";
+	std::cout << std::endl;
 	std::cout << elapsed << std::endl;
+
+
+
+
 	
-	// for(const auto& [key, value] : gpt2small.state_dict())
-	// 	std::cout << key << "\n";
 
 	
 

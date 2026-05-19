@@ -50,7 +50,7 @@ public:
 		_num_heads(num_heads), 
 		_embd_dim(embedding_dim), 
 		_mlp(embedding_dim), 
-		_mha(num_heads, embedding_dim, static_cast<i32>(embedding_dim/num_heads), static_cast<i32>(embedding_dim/num_heads)),
+		_mha(num_heads, embedding_dim, embedding_dim/num_heads, embedding_dim/num_heads),
 		_ln1({static_cast<i32>(embedding_dim)}),
 		_ln2({static_cast<i32>(embedding_dim)}){};
 	tensor forward(const tensor& input) const override;

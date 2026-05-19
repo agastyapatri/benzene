@@ -1,6 +1,7 @@
 #include "gpt2.hpp"
 #include "nn.hpp"
 #include <memory>
+#include <string>
 #include <unordered_map>
 
 namespace bz::gpt2{
@@ -81,17 +82,68 @@ std::unordered_map<std::string, const tensor*> TransformerBlock::state_dict() co
 }
 
 
+GPT2::GPT2(u32 embedding_dim, u32 num_heads, u32 num_transformer_blocks, u32 vocab_size, u32 context_length){
+	_embd_dim             = embedding_dim; 
+	_num_trans_blocks     = num_transformer_blocks; 
+	_num_heads            = num_heads;
+	_vocab_size           = vocab_size;
+	_context_len          = context_length;
+	_token_embedding 	  = nn::Embedding(vocab_size, embedding_dim); 
+	_positional_embedding = nn::Embedding(context_length, embedding_dim);
+	_final_layer_norm     = nn::LayerNorm({static_cast<i32>(embedding_dim)});
+	_final_projection     = nn::Linear(embedding_dim, vocab_size, false);
+	for(u32 i = 0; i < num_transformer_blocks; i++){
+		_transformers.push_back(make_transformer_block(_num_heads, _embd_dim));
+	}
+}
+
+
+std::vector<tensor*> GPT2::parameters(){
+	std::vector<tensor*> params; 
+	for(auto param : _token_embedding.parameters())
+		params.push_back(param);
+	for(auto param : _positional_embedding.parameters())
+		params.push_back(param);
+	for(u32 i = 0; i < _num_trans_blocks; i++){
+		for(auto param: _transformers[i]->parameters())
+			params.push_back(param);
+	}
+	for(auto param : _final_layer_norm.parameters())
+		params.push_back(param);
+	for(auto param : _final_projection.parameters())
+		params.push_back(param);
+	return params;
+}
+
+std::unordered_map<std::string, const tensor*> GPT2::state_dict() const {
+	std::unordered_map<std::string, const tensor*> sd; 
+	sd["wte.weight"] = _token_embedding.state_dict()["weight"];
+	sd["wpe.weight"] = _positional_embedding.state_dict()["weight"];
+	for(u32 i = 0; i < _num_trans_blocks; i++){
+		for(const auto& [key, value] : _transformers[i]->state_dict()){
+			sd["h." + std::to_string(i) + "." + key] = value;
+		}
+	}
+	sd["ln_f.weight"] = _final_layer_norm.state_dict()["weight"];
+	sd["ln_f.bias"] = _final_layer_norm.state_dict()["bias"];
+	return sd;
+} 
+	
 
 
 
-
-
+tensor GPT2::forward(const tensor& input) const {
+	return input;
+}
 
 
 
 
 std::unique_ptr<MLPBlock> make_mlpblock(u32 input_dimension, u32 projection_factor){
 	return std::make_unique<MLPBlock>(input_dimension, projection_factor);
+}
+std::unique_ptr<TransformerBlock> make_transformer_block(u32 num_heads, u32 embedding_dim){
+	return std::make_unique<TransformerBlock>(num_heads, embedding_dim);
 }
 
 

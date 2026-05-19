@@ -10,6 +10,7 @@ constexpr u32 gpt2_small_trans_blocks = 12;
 constexpr u32 gpt2_small_vocab_size   = 50257;	
 constexpr u32 gpt2_small_context_len  = 1024;	
 constexpr u32 gpt2_small_ffwd_dim     = 3072;
+constexpr u32 gpt2_small_num_heads    = 12;
 
 
 class MLPBlock;
@@ -36,8 +37,6 @@ public:
 };
 
 
-
-
 class TransformerBlock: public nn::Module{
 	u32 _num_heads; 
 	u32 _embd_dim; 
@@ -61,6 +60,25 @@ public:
 
 
 
+class GPT2: public nn::Module{
+	u32 _embd_dim;
+	u32 _num_trans_blocks; 
+	u32 _num_heads;
+	u32 _vocab_size; 
+	u32 _context_len;
+	nn::Embedding _token_embedding; 
+	nn::Embedding _positional_embedding;
+	std::vector<std::unique_ptr<TransformerBlock>> _transformers;
+	nn::LayerNorm _final_layer_norm;
+	nn::Linear _final_projection;
+public: 
+	GPT2() = default; 
+	GPT2(u32 embedding_dim, u32 num_heads, u32 num_transformer_blocks, u32 vocab_size, u32 context_length = 1024);
+	tensor forward(const tensor& input) const override;
+	std::vector<tensor*> parameters()  override; 
+	std::unordered_map<std::string, const tensor*> state_dict() const override;
+	
+};
 
 
 
@@ -69,7 +87,7 @@ public:
 
 
 std::unique_ptr<MLPBlock> make_mlpblock(u32 input_dimension, u32 projection_factor = 4);
-
+std::unique_ptr<TransformerBlock> make_transformer_block(u32 num_heads, u32 embedding_dim);
 
 
 }

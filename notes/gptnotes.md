@@ -238,8 +238,17 @@ CSA ensures that the outputs for a certain position in a sequence is based only 
 
 
 
+##  Embeddings 
+Word embeddings are a way to prepare natural language inputs for ingest by a machine learning model. Words, phrases and sequences of words are transformed into vectors of real numbers. This vector representation has two important properties: 
+
+1.  Dimensionality Reduction: Words are represented as vectors of n dimensions, 
+2.  Contextual Similarity: Words which are semantically close to each other also end up being close to each other in the vector space that they're a part of.
 
 
+
+##  Transformers + Tensors
+From _[The Illustrated Transformer](https://jalammar.github.io/illustrated-transformer/)_
+The first step is to turn the natural language word input into a vector using an Embedding Method.  
 
 
 

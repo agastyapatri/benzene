@@ -1,10 +1,8 @@
 #include "nn.hpp"
 #include "tensor.hpp"
-#include <bit>
 #include <cassert>
 #include <limits>
 #include <memory>
-#include <stdatomic.h>
 #include <string>
 #include <unordered_map>
 namespace bz::nn{

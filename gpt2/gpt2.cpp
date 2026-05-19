@@ -36,12 +36,11 @@ std::unordered_map<std::string, const tensor*> MLPBlock::state_dict() const {
 
 
 tensor TransformerBlock::forward(const tensor& input) const{
-	tensor out = _ln(input);
+	tensor out = _ln1(input);
 	out = _mha(out);
-	out = _mlp(out);
-	out = out + input;
+	out = out + input; 
 	tensor residual = out;
-	out = _ln(out);
+	out = _ln2(out);
 	out = _mlp(out);
 	out = out + residual;
 	return out;
@@ -55,16 +54,28 @@ std::vector<tensor*> TransformerBlock::parameters(){
 	for(auto _param : _mha.parameters()){
 		params.push_back(_param);
 	}
+	for(auto _param : _ln1.parameters()){
+		params.push_back(_param);
+	}
+	for(auto _param : _ln2.parameters()){
+		params.push_back(_param);
+	}
     return params;
 }
 
 std::unordered_map<std::string, const tensor*> TransformerBlock::state_dict() const {
 	std::unordered_map<std::string, const tensor*> sd; 
 	for(const auto& [key, value] : _mlp.state_dict()){
-		sd[key] = value;
+		sd["mlp." + key] = value;
 	}
 	for(const auto& [key, value] : _mha.state_dict()){
-		sd[key] = value;
+		sd["attn." + key] = value;
+	}
+	for(const auto& [key, value] : _ln1.state_dict()){
+		sd["ln_1." + key] = value;
+	}
+	for(const auto& [key, value] : _ln2.state_dict()){
+		sd["ln_2." + key] = value;
 	}
 	return sd;
 }

@@ -185,7 +185,7 @@ public:
 	friend tensor reshape(const tensor& t, vi32 new_shape);
 
 
-	void T(u32 dim0, u32 dim1);
+	// void T(u32 dim0, u32 dim1);
 	void reshape(vi32 new_shape);
 
 	tensor gather(const tensor& indices, i32 dim = 0) const ;

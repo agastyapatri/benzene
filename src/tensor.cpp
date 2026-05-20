@@ -339,6 +339,7 @@ tensor tensor::operator*(const tensor& other) const {
 	tensor out(outshape.value());
 
 	if(this->_shape == other._shape){
+		#pragma omp parallel for
 		for(u64 i = 0; i < this->_numel; i++)
 			out._data[i] = this->_data[i] * other._data[i];
 		return out;
@@ -393,6 +394,7 @@ tensor tensor::operator/(const tensor& other) const {
 	tensor out(outshape.value());
 
 	if(this->_shape == other._shape){
+		#pragma omp parallel for
 		for(u64 i = 0; i < this->_numel; i++)
 			out._data[i] = this->_data[i] / other._data[i];
 		return out;
@@ -438,6 +440,13 @@ tensor tensor::operator/(const tensor& other) const {
 }
 
 
+tensor operator*(f32 scalar, const tensor& t){
+	tensor out(t._shape);
+	#pragma omp parallel for
+	for(u64 i = 0; i < out._numel; i++)
+		out._data[i] = t._data[i] * scalar;
+	return out;
+}
 
 tensor tensor::operator*(float scalar) const {
 	tensor out(_shape);
@@ -803,7 +812,7 @@ tensor gelu(const tensor& t){
 	tensor out(t._shape);
 	#pragma omp parallel for
 	for(u64 i = 0; i < t._numel; i++)
-		out._data[i] = (0.5*t._data[i]) * (1 + std::tanh(SQRTTWOBYPI * (t._data[i] + 0.047715 * t._data[i] * t._data[i] * t._data[i])));
+		out._data[i] = (0.5*t._data[i]) * (1 + std::tanh(SQRTTWOBYPI * (t._data[i] + 0.044715 * t._data[i] * t._data[i] * t._data[i])));
 
 	return out;
 }
@@ -878,24 +887,22 @@ tensor transpose(const tensor& t, u32 dim0, u32 dim1){
 
 
 
-
-
-void tensor::T(u32 dim0, u32 dim1){
-	std::swap(this->_shape[dim0], this->_shape[dim1]);
-	this->compute_strides();
-	vf32 _old_data = this->_data;
-
-	for(bz::u64 i = 0; i < this->_numel; i++){
-		bz::vi32 original_loc = this->flat_idx_to_coord(i);
-		bz::vi32 new_loc = original_loc;
-		std::swap(new_loc[dim0], new_loc[dim1]);
-		i32 offset = 0;
-		for(bz::i32 j = 0; j < this->_ndim; j++){
-			offset += new_loc[j] * this->_strides[j];
-		}
-		this->_data[offset] = _old_data[i];
-	}
-}
+// void tensor::T(u32 dim0, u32 dim1){
+// 	std::swap(this->_shape[dim0], this->_shape[dim1]);
+// 	this->compute_strides();
+// 	vf32 _old_data = this->_data;
+//
+// 	for(bz::u64 i = 0; i < this->_numel; i++){
+// 		bz::vi32 original_loc = this->flat_idx_to_coord(i);
+// 		bz::vi32 new_loc = original_loc;
+// 		std::swap(new_loc[dim0], new_loc[dim1]);
+// 		i32 offset = 0;
+// 		for(bz::i32 j = 0; j < this->_ndim; j++){
+// 			offset += new_loc[j] * this->_strides[j];
+// 		}
+// 		this->_data[offset] = _old_data[i];
+// 	}
+// }
 
 
 tensor reshape(const tensor& t, vi32 new_shape){
@@ -947,6 +954,7 @@ tensor softmax(const tensor& t, i32 dim) {
 	for (i32 i = dim + 1; i < t.ndim(); ++i) inner_size *= shape[i];
 
 	// 3. Perform Softmax
+	#pragma omp parallel for
 	for (i32 o = 0; o < outer_size; ++o) {
 		for (i32 i = 0; i < inner_size; ++i) {
 			// Determine the offset for this specific slice
@@ -1051,7 +1059,7 @@ tensor tensor::gather(const tensor& indices, i32 dim) const {
 		tensor out({nrows, ncols});
 		for(i32 i = 0; i < nrows; i++){
 			i32 current_index = indices._data[i];
-			assert(current_index >= 0 && current_index <= _shape[_ndim - 2]);
+			assert(current_index >= 0 && current_index < _shape[_ndim - 2]);
 			const float* source_row_start = _data.data() + (current_index * ncols);
 			float* destination_row = out._data.data() + (i * ncols);
 			std::copy(source_row_start, source_row_start + ncols, destination_row);
@@ -1072,7 +1080,7 @@ tensor tensor::gather(const vi32 indices, i32 dim) const {
 		tensor out({(i32)nrows, (i32)ncols});
 		for(i32 i = 0; i < nrows; i++){
 			i32 current_index = indices.data()[i];
-			assert(current_index >= 0 && current_index <= _shape[0]);
+			assert(current_index >= 0 && current_index < _shape[0]);
 			const float* source_row_start = _data.data() + (current_index * ncols);
 			float* destination_row = out._data.data() + (i * ncols);
 			std::copy(source_row_start, source_row_start + ncols, destination_row);

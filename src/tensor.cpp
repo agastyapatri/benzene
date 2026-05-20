@@ -4,6 +4,7 @@
 #include <cfloat>
 #include <functional>
 #include <initializer_list>
+#include <iterator>
 #include <numeric>
 #include <random> 
 #include <cmath>
@@ -1048,12 +1049,14 @@ tensor layernorm(const tensor& t) {
 }
 
 tensor tensor::gather(const tensor& indices, i32 dim) const {
-	assert(dim <= _ndim);
+	assert(dim < _ndim);
 	if(_ndim != 2){
 		throw std::runtime_error("tensor::gather is currently only supported when _ndim == 2");
 	}
-	
-	if(dim == 0){
+	if(dim != 0){
+		throw std::runtime_error("bz::tensor::gather only works for dim == 0");
+	}
+	if(indices._ndim == 1){
 		i32 nrows = indices._numel;
 		i32 ncols = this->_shape[this->_ndim - 1];
 		tensor out({nrows, ncols});
@@ -1065,8 +1068,24 @@ tensor tensor::gather(const tensor& indices, i32 dim) const {
 			std::copy(source_row_start, source_row_start + ncols, destination_row);
 		}
 		return out;
+	} else if(indices._ndim == 2){
+		i32 nbatches = indices.shape()[0];
+		i32 nindices = indices.shape()[1];
+		i32 ncols    = this->_shape[this->_ndim - 1];
+		tensor out({nbatches, nindices, ncols});
+		for(i32 i = 0; i < nbatches; i++){
+			for(i32 j = 0; j < nindices; j++){
+				i32 current_index = indices.at({i, j}); 
+				assert(current_index >= 0 && current_index < _shape[_ndim - 2]);
+				const float* source_row_start = _data.data() + (current_index * ncols);
+				float* destination_row = out._data.data() + (i* nbatches* nindices ) + (j * ncols);
+				std::copy(source_row_start, source_row_start + ncols, destination_row);
+			}
+		}
+		return out;
 	}
-	throw std::runtime_error("bz::tensor::gather only works for dim == 0");
+
+	throw std::runtime_error("bz::tensor::gather does not work for this configuration of shapes");
 }
 
 tensor tensor::gather(const vi32 indices, i32 dim) const {

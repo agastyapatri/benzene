@@ -76,8 +76,30 @@ Embedding::Embedding(const i32 num_embeddings, const i32 embedding_dim){
 }
 
 tensor Embedding::forward(const tensor& input) const{
-	tensor output = _weight.gather(input);
-	return output;
+	tensor output;
+	if(input.ndim() == 1){
+		output = _weight.gather(input);
+		return output;
+	}
+	// input = [batch_size, sequence_length]
+	else if(input.ndim() == 2){
+		i32 batch_size 		= input.shape()[0];
+		i32 sequence_length = input.shape()[1];
+		tensor output({batch_size, sequence_length, _embedding_dim});
+		for(i32 i = 0; i < batch_size; i++){
+			for(i32 j = 0; j < sequence_length; j++){
+				i32 query_idx = input.at({i, j});	// index which currently is building the embedding slice
+				for(i32 k = 0; k < _embedding_dim; k++){
+					output.at({i, j, k}) = _weight.at({query_idx, k});
+				}
+			}
+		}
+		return output;
+
+	}
+	else{
+		throw std::runtime_error("singular and batched inputs can be handled now");
+	}
 }
 
 std::unordered_map<std::string, const tensor*> Embedding::state_dict() const {

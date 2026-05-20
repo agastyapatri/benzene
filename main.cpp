@@ -3,10 +3,11 @@
 #include "gpt2.hpp"
 #include <chrono> 
 namespace gpt2 = bz::gpt2;
-using tensor = bz::tensor;
+using tensor   = bz::tensor;
+namespace nn   = bz::nn;
 
-constexpr bz::i32 batch_size = 1;
-constexpr bz::i32 seq_len =  128;
+constexpr bz::i32 batch_size = 2;
+constexpr bz::i32 seq_len =  4;
 constexpr bz::i32 embd_dim = 768;
 constexpr bz::i32 num_heads =  2;
 
@@ -20,8 +21,8 @@ constexpr bz::i32 num_heads =  2;
 
 
 int main(){
-	// tensor tokens({1, 4}, {0.0f, 1.0f, 2.0f, 3.0f});
-	tensor tokens = tensor::linspace(0, seq_len, seq_len);
+
+	tensor tokens({2, 4}, {1, 2, 3, 4, 5, 6, 7, 8});
 	gpt2::GPT2 gpt2small(
 			gpt2::gpt2_small_embd_dim, 
 			gpt2::gpt2_small_num_heads, 

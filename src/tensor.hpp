@@ -43,6 +43,7 @@ tensor layernorm(const tensor& t);
 tensor unsqueeze(const tensor& t);
 tensor transpose(const tensor& t, u32 dim0, u32 dim1);
 tensor reshape(const tensor& t, vi32 new_shape);
+tensor concat(const std::vector<tensor> tensorlist, i32 axis);
 
 
 tensor matmul(const tensor& inp1, const tensor& inp2);
@@ -183,6 +184,7 @@ public:
 	// manipulations
 	friend tensor transpose(const tensor& t, u32 dim0, u32 dim1);
 	friend tensor reshape(const tensor& t, vi32 new_shape);
+	friend tensor concat(const std::vector<tensor> tensorlist, i32 axis);
 
 
 	// void T(u32 dim0, u32 dim1);

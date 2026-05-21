@@ -4,7 +4,6 @@
 #include <cfloat>
 #include <functional>
 #include <initializer_list>
-#include <iterator>
 #include <numeric>
 #include <random> 
 #include <cmath>
@@ -1117,6 +1116,70 @@ tensor tensor::arange(f32 start, f32 end, f32 step){
 		out._data[i] = start + i*step;
 	return out;
 }
+
+tensor concat(const std::vector<tensor> tensorlist, i32 axis){
+	i32 num_tensors = tensorlist.size(); 
+	tensor seed = tensorlist[0];
+	assert(axis < seed.ndim());
+	vi32 out_shape = seed.shape();
+	i32 target_axis_len = seed.shape()[axis];
+	for(i32 i = 1; i < num_tensors; i++){
+		if(tensorlist[i].ndim() != seed.ndim()){
+			throw std::runtime_error("Rank mismatch in set of tensors provided in bz::concat");
+		}
+		for(i32 j = 0; j < seed.ndim(); j++){
+			if(j == axis)	continue; 
+			if(tensorlist[i].shape()[j] != seed.shape()[j]){
+				throw std::runtime_error("Shape mismatch in set of tensors provided in bz::concat");
+			}
+		}
+		target_axis_len += tensorlist[i].shape()[axis];
+	}
+	out_shape[axis] = target_axis_len;
+
+
+	//	TODO: fix concat
+	tensor out(out_shape);
+	if(axis == 0){
+		i32 start_idx = 0;
+		std::copy(seed._data.begin(), seed._data.end(), out._data.begin());
+		for(i32 i = 1; i < num_tensors; i++){
+			start_idx += i*(tensorlist[i-1].numel());	// point in the output buffer where the current tensors data lies
+			std::copy(tensorlist[i]._data.begin(), tensorlist[i]._data.end(), out._data.begin() + start_idx);
+		}
+		return out;
+	}
+	return out;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

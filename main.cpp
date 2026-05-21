@@ -23,23 +23,39 @@ constexpr bz::i32 num_heads =  2;
 int main(){
 
 
-	tensor t1({2, 4}, {1,2,3,4,5,6,7,8});
-	tensor t2({2, 4}, {9,10,11,12,13,14,15,16});
-	tensor t3({2, 4}, {17, 18, 19, 20, 21, 22, 23, 24});
-	tensor out = bz::concat({t1, t2, t3}, 0);
+	// tensor t1({2, 4}, {1,2,3,4,5,6,7,8});
+	// tensor t2({2, 4}, {9,10,11,12,13,14,15,16});
+	// tensor t3({2, 4}, {17, 18, 19, 20, 21, 22, 23, 24});
+	tensor t1 = tensor::randn({2,3, 4});
+	tensor t2 = tensor::randn({2,3, 4});
+	// tensor t3 = tensor::randn({2,3, 4});
+
+
+	
+
+
+	// tensor out = bz::concat({t1, t2}, 0);
+	// for(auto i : out.shape())	
+	// 	std::cout << i << " ";
+	// std::cout << std::endl << std::endl;
+	//
+	// std::cout << out << std::endl;
+
+
+	tensor out = bz::concat({t1, t2}, 2);
 	for(auto i : out.shape())	
 		std::cout << i << " ";
-	std::cout << std::endl;
+	std::cout << std::endl << std::endl;
+
 	std::cout << out << std::endl;
 
-
-	out = bz::concat({t1, t2, t3}, 1);
-	for(auto i : out.shape())	
-		std::cout << i << " ";
-	std::cout << std::endl;
-	std::cout << out << std::endl;
-
-
+	// out = bz::concat({t1, t2}, 2);
+	// for(auto i : out.shape())	
+	// 	std::cout << i << " ";
+	// std::cout << std::endl << std::endl;
+	//
+	// std::cout << out << std::endl;
+	//
 
 
 

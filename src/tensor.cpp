@@ -1138,17 +1138,32 @@ tensor concat(const std::vector<tensor> tensorlist, i32 axis){
 	out_shape[axis] = target_axis_len;
 
 
-	//	TODO: fix concat
 	tensor out(out_shape);
 	if(axis == 0){
 		i32 start_idx = 0;
-		std::copy(seed._data.begin(), seed._data.end(), out._data.begin());
-		for(i32 i = 1; i < num_tensors; i++){
-			start_idx += i*(tensorlist[i-1].numel());	// point in the output buffer where the current tensors data lies
+		for(i32 i = 0; i < num_tensors; i++){
 			std::copy(tensorlist[i]._data.begin(), tensorlist[i]._data.end(), out._data.begin() + start_idx);
+			start_idx += (tensorlist[i].numel());	// point in the output buffer where the current tensors data lies
+
 		}
 		return out;
 	}
+
+	i32 num_groups = 1;
+	for(i32 i = 0; i < seed._ndim; i++){
+		if(i < axis)	num_groups*= seed._shape[i];
+	}
+	i32 out_offset = 0;
+	for(i32 i = 0; i < num_groups; i++){
+		for(i32 j = 0; j < num_tensors; j++){
+			i32 group_size = tensorlist[j].numel() / num_groups;
+			i32 start_idx = i*group_size;
+			i32 end_idx   = (i+1)*group_size;
+			std::copy(tensorlist[j]._data.begin() + start_idx, tensorlist[j]._data.begin() + end_idx, out._data.begin() + out_offset);
+			out_offset += group_size;
+		}
+	}
+
 	return out;
 }
 

@@ -1088,27 +1088,6 @@ tensor tensor::gather(const tensor& indices, i32 dim) const {
 	throw std::runtime_error("bz::tensor::gather does not work for this configuration of shapes");
 }
 
-tensor tensor::gather(const vi32 indices, i32 dim) const {
-	assert(dim <= _ndim);
-	if(_ndim != 2){
-		throw std::runtime_error("tensor::gather is currently only supported when _ndim == 2");
-	}
-	if(dim == 0){
-		i32 nrows = indices.size();
-		i32 ncols = _shape[1];
-		tensor out({(i32)nrows, (i32)ncols});
-		for(i32 i = 0; i < nrows; i++){
-			i32 current_index = indices.data()[i];
-			assert(current_index >= 0 && current_index < _shape[0]);
-			const float* source_row_start = _data.data() + (current_index * ncols);
-			float* destination_row = out._data.data() + (i * ncols);
-			std::copy(source_row_start, source_row_start + ncols, destination_row);
-		}
-		return out;
-	}
-	throw std::runtime_error("bz::tensor::gather only works for dim == 0");
-}
-
 
 tensor unsqueeze(const tensor& t){
 	tensor out;

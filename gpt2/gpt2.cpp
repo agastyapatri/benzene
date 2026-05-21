@@ -82,21 +82,6 @@ std::unordered_map<std::string, const tensor*> TransformerBlock::state_dict() co
 }
 
 
-GPT2::GPT2(u32 embedding_dim, u32 num_heads, u32 num_transformer_blocks, u32 vocab_size, u32 context_length){
-	_embd_dim             = embedding_dim; 
-	_num_trans_blocks     = num_transformer_blocks; 
-	_num_heads            = num_heads;
-	_vocab_size           = vocab_size;
-	_context_len          = context_length;
-	_token_embedding 	  = nn::Embedding(vocab_size, embedding_dim); 
-	_positional_embedding = nn::Embedding(context_length, embedding_dim);
-	_final_layer_norm     = nn::LayerNorm({static_cast<i32>(embedding_dim)});
-	_final_projection     = nn::Linear(embedding_dim, vocab_size, false);
-	for(u32 i = 0; i < num_transformer_blocks; i++){
-		_transformers.push_back(make_transformer_block(_num_heads, _embd_dim));
-	}
-}
-
 
 std::vector<tensor*> GPT2::parameters(){
 	std::vector<tensor*> params; 
@@ -132,20 +117,19 @@ std::unordered_map<std::string, const tensor*> GPT2::state_dict() const {
 
 
 
+//	returns raw logits, and leaves out the softmax for the decode loop.
 tensor GPT2::forward(const tensor& input) const {
-	tensor out = input;
-	i32 _seq_len = input.shape()[input.ndim() - 1];
+	i32 seq_len = input.shape()[input.ndim() - 1];
 	tensor token_embeddings = _token_embedding(input);
-	tensor positions = tensor::arange(0, _seq_len, 1); 
+	tensor positions = tensor::arange(0, seq_len, 1); 
 	tensor position_embeddings = _positional_embedding(positions);
-	out = token_embeddings + position_embeddings;
-	// if(out.ndim() == 2)	out.unsqueeze();	// if it is not a batched input, introduce a batch size of 1
+	tensor out = token_embeddings + position_embeddings;
+	// if(out.ndim() == 1)	out.unsqueeze();	// if it is not a batched input, introduce a batch size of 1
 	for(u32 i = 0; i < _num_trans_blocks; i++){
 		out = _transformers[i]->forward(out);
 	}
 	out = _final_layer_norm(out);
 	out = _final_projection(out);
-	out = bz::softmax(out, -1);
 	return out;
 }
 

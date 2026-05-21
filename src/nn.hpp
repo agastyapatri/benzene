@@ -79,7 +79,15 @@ private:
 	i32 _out_shape;
 public: 
 	Linear() = default;
-	Linear(i32 in_features, i32 out_features, bool bias = true);
+	Linear(i32 in_features, i32 out_features, bool bias = true): 
+		_in_shape(in_features),
+		_out_shape(out_features)
+	{
+		_weight = tensor::randu_he({(i32)in_features, (i32)out_features}, in_features);
+		if(bias){
+			_bias = tensor::randu_he({(i32)out_features}, in_features);
+		}
+	}
 	tensor forward(const tensor& input) const override;
 	std::vector<tensor*> parameters()  override; 
 	std::unordered_map<std::string, const tensor*> state_dict() const override;
@@ -106,7 +114,11 @@ private:
 	tensor _weight;
 public: 
 	Embedding() = default; 
-	Embedding(const i32 num_embeddings, const i32 embedding_dim);
+	Embedding(const i32 num_embeddings, const i32 embedding_dim): 
+		_num_embeddings(num_embeddings), 
+		_embedding_dim(embedding_dim){
+			_weight = tensor::rand_normal({num_embeddings, embedding_dim}, 0, 0.02);
+		}
 	tensor forward(const tensor& input) const override;
 	std::vector<tensor*> parameters()  override; 
 	std::unordered_map<std::string, const tensor*> state_dict() const override;
@@ -118,7 +130,11 @@ class LayerNorm: public Module{
 	vi32 _normalized_shape;
 public: 
 	LayerNorm() = default;
-	LayerNorm(vi32 normalized_shape); 
+	LayerNorm(vi32 normalized_shape): 
+		_normalized_shape(normalized_shape){
+			_weight = tensor::ones(normalized_shape);
+			_bias = tensor::zeros(normalized_shape);
+		}
 	tensor forward(const tensor& input) const override;
 	std::vector<tensor*> parameters()  override; 
 	std::unordered_map<std::string, const tensor*> state_dict() const override;
@@ -176,7 +192,16 @@ class MultiheadAttention: public Module{
 	tensor _w_o; 	//	tensor of output weights; shape [num_heads*dv, d_in]
 public: 
 	MultiheadAttention() = default; 
-	MultiheadAttention(i32 num_heads, i32 d_in, i32 d_kq, i32 d_v);
+	MultiheadAttention(i32 num_heads, i32 d_in, i32 d_kq, i32 d_v):
+		_num_heads(num_heads), 
+		_d_in(d_in), 
+		_d_kq(d_kq), 
+		_d_v(d_v){
+			_w_k = tensor::randu_he({d_in, num_heads*d_kq}, d_in);  
+			_w_q = tensor::randu_he({d_in, num_heads*d_kq}, d_in);
+			_w_v = tensor::randu_he({d_in, num_heads*d_v} , d_in);
+			_w_o = tensor::randu_he({num_heads*d_v, d_in} , num_heads*d_v);
+		}
 	tensor forward(const tensor& input) const override;
 	std::vector<tensor*> parameters()  override; 
 	std::unordered_map<std::string, const tensor*> state_dict() const override;

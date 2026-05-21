@@ -31,18 +31,18 @@ I've tried to keep the dependencies minimal, but BLAS/LAPACK were used to make t
 -   ~GELU~
 -   ~Causal Self Attention~
 -   ~Multi Head Self Attention~
--   Feed Forward Networks 
--   Transformer Block - attention + ffn + layernorm
+-   ~Feed Forward Networks~
+-   ~Transformer Block - attention + ffn + layernorm~
 
 3.  Load Weights 
 -   Loading GPT-2 weights; support GGUF? safetensor? 
 -   Weight map : name -> tensor dictionary 
 
 4.  GPT-2 
--   Token Embedding lookup 
--   Positional Embedding lookup 
--   Stacking transformer blocks - aim to replicate GPT-2 small (~120 M)
--   Final projection + logits 
+-   ~Token Embedding lookup~
+-   ~Positional Embedding lookup~
+-   ~Stacking transformer blocks - aim to replicate GPT-2 small (124 M)~
+-   ~Final projection + logits~
 -   Greedy sampling 
 -   Temperature + top-k sampling 
 
@@ -62,20 +62,7 @@ I've tried to keep the dependencies minimal, but BLAS/LAPACK were used to make t
 -   INT8 quantization 
 -   Memory Mapped weight loading 
 -   Change the way bz reductions are calculated; move to a recursive solution / hardcoded loops.
+-   `bz::transpose` needs to go from returning a whole copy of the source tensor to returning a view. This is a major refactor of the entire base layer of code, it requires every single flat loop to become stride aware, and to be ableto handle non-contiguous tensors.
 
-
-
-##  Immediate Concerns 
-1.  ~Learn about and implement the `bz::nn::MultiheadAttention` module~
-2.  ~MLP Block: `bz::nn::Linear` and `bz::nn::GELU` stacked together (trivial)~
-3.  Implement the transformer block; test how well `bz::nn::Sequential` works with all modules created up to this point.
-4.  Build `GPT-2 Small` architecture while making sure to understand the decisions made during the building of this model. Testing of the forward pass will be done with dummy data taken from microgpt-c.
-5.  Loading GPT-2 weights from GGUF. Have to figure out the deserialization process. This will be a bit of fun.
-
-
-
-### Concerns after that 
-6.  Tokenizing. 
-7.  Actual inference 
 
 

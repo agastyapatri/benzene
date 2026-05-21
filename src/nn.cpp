@@ -7,15 +7,6 @@
 #include <unordered_map>
 namespace bz::nn{
 
-Linear::Linear(i32 in_features, i32 out_features, bool bias){
-	_in_shape = in_features; 
-	_out_shape = out_features; 
-	_weight = tensor::randu_he({(i32)in_features, (i32)out_features}, in_features);
-	if(bias){
-		_bias = tensor::randu_he({(i32)out_features}, in_features);
-	}
-}
-
 tensor Linear::forward(const tensor& input) const {
 	tensor out = matmul(input, _weight);
 	if(_bias.has_value())	out = out+_bias.value();
@@ -69,12 +60,6 @@ tensor Sequential::forward(const tensor& input) const {
 	return out;
 }
 
-Embedding::Embedding(const i32 num_embeddings, const i32 embedding_dim){
-	_num_embeddings = num_embeddings; 
-	_embedding_dim = embedding_dim; 
-	_weight = tensor::rand_normal({num_embeddings, embedding_dim}, 0, 0.02);
-}
-
 tensor Embedding::forward(const tensor& input) const{
 	tensor output;
 	output = _weight.gather(input);
@@ -94,11 +79,6 @@ std::vector<tensor*> Embedding::parameters(){
 }
 
 
-LayerNorm::LayerNorm(vi32 normalized_shape){
-	_normalized_shape = normalized_shape;
-	_weight = tensor::ones(normalized_shape);
-	_bias = tensor::zeros(normalized_shape);
-}
 
 tensor LayerNorm::forward(const tensor& input) const {
 	tensor out = bz::layernorm(input);
@@ -229,18 +209,6 @@ tensor CausalSelfAttention::forward(const tensor& input) const {
 	tensor context_vec = bz::matmul(attn_weights, values); 											 // batch_size x seq_len x d_v
 	return context_vec;
 }
-
-
-MultiheadAttention::MultiheadAttention(i32 num_heads, i32 d_in, i32 d_kq, i32 d_v){
-	_num_heads = num_heads; 
-	_d_in = d_in; 
-	_d_kq = d_kq; 
-	_d_v = d_v;
-	_w_k = tensor::randu_he({d_in, num_heads*d_kq}, d_in);  
-	_w_q = tensor::randu_he({d_in, num_heads*d_kq}, d_in);
-	_w_v = tensor::randu_he({d_in, num_heads*d_v} , d_in);
-	_w_o = tensor::randu_he({num_heads*d_v, d_in} , num_heads*d_v);
-} 
 
 
 std::vector<tensor*> MultiheadAttention::parameters(){

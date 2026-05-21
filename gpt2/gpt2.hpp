@@ -16,7 +16,8 @@ constexpr u32 gpt2_small_num_heads    = 12;
 class MLPBlock;
 class TransformerBlock;
 class GPT2Small;
-
+std::unique_ptr<MLPBlock> make_mlpblock(u32 input_dimension, u32 projection_factor = 4);
+std::unique_ptr<TransformerBlock> make_transformer_block(u32 num_heads, u32 embedding_dim);
 
 class MLPBlock: public nn::Module{
 	u32 _input_dim;			//	embedding dimension of the input sequence 
@@ -73,7 +74,23 @@ class GPT2: public nn::Module{
 	nn::Linear _final_projection;
 public: 
 	GPT2() = default; 
-	GPT2(u32 embedding_dim, u32 num_heads, u32 num_transformer_blocks, u32 vocab_size, u32 context_length = 1024);
+	GPT2(u32 embedding_dim, u32 num_heads, u32 num_transformer_blocks, u32 vocab_size, u32 context_length = 1024):
+		_embd_dim        (embedding_dim), 
+		_num_trans_blocks(num_transformer_blocks), 
+		_num_heads       (num_heads),
+		_vocab_size      (vocab_size),
+		_context_len     (context_length),
+		_token_embedding 	 (vocab_size, embedding_dim), 
+		_positional_embedding(context_length, embedding_dim),
+		_final_layer_norm    ({static_cast<i32>(embedding_dim)}),
+		_final_projection    (embedding_dim, vocab_size, false){
+			for(u32 i = 0; i < num_transformer_blocks; i++){
+				_transformers.push_back(make_transformer_block(_num_heads, _embd_dim));
+			}
+		}
+
+
+
 	tensor forward(const tensor& input) const override;
 	std::vector<tensor*> parameters()  override; 
 	std::unordered_map<std::string, const tensor*> state_dict() const override;
@@ -86,8 +103,6 @@ public:
 
 
 
-std::unique_ptr<MLPBlock> make_mlpblock(u32 input_dimension, u32 projection_factor = 4);
-std::unique_ptr<TransformerBlock> make_transformer_block(u32 num_heads, u32 embedding_dim);
 
 
 }

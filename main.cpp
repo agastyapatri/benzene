@@ -22,7 +22,10 @@ constexpr bz::i32 num_heads =  2;
 
 int main(){
 
-	tensor tokens({2, 4}, {1, 2, 3, 4, 5, 6, 7, 8});
+	tensor tokens({1, 4}, {1,2,3,4});
+
+
+
 	gpt2::GPT2 gpt2small(
 			gpt2::gpt2_small_embd_dim, 
 			gpt2::gpt2_small_num_heads, 
@@ -39,7 +42,7 @@ int main(){
 	for(auto i : out.shape())
 		std::cout << i << " ";
 	std::cout << std::endl;
-	std::cout << elapsed << std::endl;
+	std::cout << elapsed.count()*1e-6 << " seconds." << std::endl;
 
 
 

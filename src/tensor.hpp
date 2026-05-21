@@ -189,7 +189,6 @@ public:
 	void reshape(vi32 new_shape);
 
 	tensor gather(const tensor& indices, i32 dim = 0) const ;
-	tensor gather(const vi32 indices, i32 dim = 0) const ;
 	void unsqueeze();
 
 

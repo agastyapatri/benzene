@@ -23,8 +23,8 @@ I've tried to keep the dependencies minimal, but BLAS/LAPACK were used to make t
 -   ~rmsnorm~ 
 -   ~reshape~ 
 -   slice 
--   concat 
--   Tensor I/O 
+-   ~concat~ 
+-   Tensor I/O: Supporting NumPy's `.npy` format. 
 
 2.  Neural Network Primitives 
 -   ~Linear Layer~
@@ -63,6 +63,50 @@ I've tried to keep the dependencies minimal, but BLAS/LAPACK were used to make t
 -   Memory Mapped weight loading 
 -   Change the way bz reductions are calculated; move to a recursive solution / hardcoded loops.
 -   `bz::transpose` needs to go from returning a whole copy of the source tensor to returning a view. This is a major refactor of the entire base layer of code, it requires every single flat loop to become stride aware, and to be ableto handle non-contiguous tensors.
+
+
+
+
+
+##  The NumPy `.npy` format.
+`.npy` is a simple format for saving numpy arrays to disk with the full information about them. It is the standard binary format for persisting single arbitrary NumPy arrays on disk. The format stores all of the shape and dtype information necessary to reconstruct the array correctly even on another machine with a different architecture. 
+`.npz` is the standard format for saving multiple numpy arrays on disk.
+
+
+*From Claude* 
+**the `.npy` format has three parts:**
+1.  **Magic string and version**: every .npy file starts with a fixed sequence of bytes - a magic string `\x93NUMPY` folowed by two bytes for the major and minor version number. This is how numpy identifies the file as a valid .npy file. 
+2.  **Header:** The header is a python dictionary literal stored as a string. It contains three bits of information: 
+-   `descr`: the data type, `<f4` means little endian 32 bit float; what benzene uses.
+-   `fortran_order`: Whether the data is stored in fortran / column major order. For bezene, `False.`
+-   `shape`:    the shape of the tensor as a python tuple
+The header string is padded with spaces to make the total length up to that point a multiple of 64 bytes. 
+3.  **Raw Data**: Immediately after the header, the raw float bytes are written sequentially. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

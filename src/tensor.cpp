@@ -1169,6 +1169,10 @@ tensor concat(const std::vector<tensor> tensorlist, i32 axis){
 
 
 
+tensor tensor::load(std::string path){
+	tensor out({1,1});
+	return out;
+}
 
 
 

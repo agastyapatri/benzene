@@ -52,6 +52,7 @@ tensor mm(const tensor& inp1, const tensor& inp2);
 tensor mv(const tensor& inp1, const tensor& inp2);
 
 
+
 class tensor{
 	vf32 _data;
 	vi32 _shape;
@@ -194,9 +195,10 @@ public:
 	void unsqueeze();
 
 
-
-
-
+	
+	//	Tensor IO
+	static tensor load(std::string path);
+	static void   save(std::string path);
 
 
 

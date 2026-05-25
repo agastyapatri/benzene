@@ -23,9 +23,11 @@ constexpr bz::i32 num_heads =  2;
 
 
 int main(){
-	tensor t1 = tensor::randn({5,5});
+	tensor t1 = tensor::randn({5,5,5});
 	tensor::save(t1, "test.npy");
-	std::cout << t1 << std::endl;
+	tensor t2 = tensor::load("test.npy");
+	std::cout << t2 << std::endl;
+
 
 
 

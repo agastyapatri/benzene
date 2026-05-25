@@ -1199,6 +1199,52 @@ void tensor::save(tensor t, std::string path){
 }
 
 
+//	from claude; string parsing is too much of a detour from my current goals.
+tensor tensor::load(std::string path){
+    tensor out;
+    std::ifstream infile(path, std::ios::binary);
+    if(!infile)
+        throw std::runtime_error("Unable to open file\n");
+    
+    // Magic check
+    std::string magic = "\x93NUMPY";
+    char magic_buf[6];
+    infile.read(magic_buf, 6);
+    if(!(std::string(magic_buf, 6) == magic))
+        throw std::runtime_error("Invalid .npy file");
+    
+    // Version
+    char version[2];
+    infile.read(version, 2);
+    
+    // Header length
+    uint16_t header_length;
+    infile.read(reinterpret_cast<char*>(&header_length), sizeof(header_length));
+    
+    // Header
+    std::string header(header_length, ' ');
+    infile.read(&header[0], header_length);
+    
+    // Parse shape
+    size_t shape_start = header.find('(') + 1;
+    size_t shape_end   = header.find(')');
+    std::string shape_str = header.substr(shape_start, shape_end - shape_start);
+    vi32 shape;
+    std::stringstream ss(shape_str);
+    std::string token;
+    while(std::getline(ss, token, ',')){
+        token.erase(std::remove_if(token.begin(), token.end(), ::isspace), token.end());
+        if(!token.empty())
+            shape.push_back(std::stoi(token));
+    }
+    
+    // Read data
+    out = tensor(shape);
+    infile.read(reinterpret_cast<char*>(out._data.data()), out.numel() * sizeof(float));
+    
+    infile.close();
+    return out;
+}
 
 
 

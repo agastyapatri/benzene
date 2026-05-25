@@ -1,5 +1,6 @@
 import numpy as np 
 if __name__ == "__main__":
-    x = np.random.randn(10, 10)
+    with open("test.npy", "rb") as file: 
+        x = np.load(file)
     print(x)
-    np.save("test.npy", x)
+    print(x.shape)

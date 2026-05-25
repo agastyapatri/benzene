@@ -198,7 +198,7 @@ public:
 	
 	//	Tensor IO
 	static tensor load(std::string path);
-	static void   save(std::string path);
+	static void   save(tensor t, std::string path);
 
 
 

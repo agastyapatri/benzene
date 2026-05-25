@@ -1,5 +1,7 @@
 #include "tensor.hpp"
 #include <algorithm>
+#include <cstdint>
+#include <fstream> 
 #include <cassert>
 #include <cfloat>
 #include <functional>
@@ -10,6 +12,7 @@
 #include <openblas/cblas.h> 
 #include <stdexcept>
 #include <iomanip>
+#include <string>
 
 namespace bz{
 
@@ -1169,9 +1172,30 @@ tensor concat(const std::vector<tensor> tensorlist, i32 axis){
 
 
 
-tensor tensor::load(std::string path){
-	tensor out({1,1});
-	return out;
+void tensor::save(tensor t, std::string path){
+	std::ofstream outfile(path, std::ios::binary);
+	if(!outfile.is_open())
+		throw std::runtime_error("Unable to open file\n");
+	std::string magic = "\x93NUMPY";
+	outfile.write(magic.c_str(), magic.size());
+	uint8_t version[2] = {0x01, 0x00};
+	outfile.write(reinterpret_cast<const char*>(version), 2);
+	std::string header = "{\'descr\':\'<f4\', \'fortran_order\':False, \'shape\':(";
+	for(auto i : t.shape()){
+		header += std::to_string(i) ;
+		header += ",";
+	}
+	header += "), }";
+	size_t total = 6 + 2 + 2 + header.size() + 1;
+	size_t padding_len = (64 - (total % 64)) % 64;
+	std::string padding(padding_len, ' ');
+	padding += '\n';
+	header += padding;
+	uint16_t header_length = static_cast<uint16_t>(header.size());
+	outfile.write(reinterpret_cast<const char*>(&header_length), sizeof(header_length));
+	outfile.write(header.c_str(), header.size());
+	outfile.write(reinterpret_cast<const char*>(t.data().data()), t.numel()*sizeof(f32));
+	outfile.close();
 }
 
 

@@ -24,7 +24,7 @@ I've tried to keep the dependencies minimal, but BLAS/LAPACK were used to make t
 -   ~reshape~ 
 -   slice 
 -   ~concat~ 
--   Tensor I/O: Supporting NumPy's `.npy` format. 
+-   ~Tensor I/O: Supporting NumPy's `.npy` format.~
 
 2.  Neural Network Primitives 
 -   ~Linear Layer~
@@ -82,6 +82,34 @@ I've tried to keep the dependencies minimal, but BLAS/LAPACK were used to make t
 -   `shape`:    the shape of the tensor as a python tuple
 The header string is padded with spaces to make the total length up to that point a multiple of 64 bytes. 
 3.  **Raw Data**: Immediately after the header, the raw float bytes are written sequentially. 
+
+
+
+
+
+
+##  The GGUF format. 
+GGUF was developed by the llama.cpp project to store LLM weights. It was designed to be a self contained file that hold everything needed to run a model - the weights, architecture confguration and the tokenizer. 
+There are four sections to a GGUF file: 
+
+1.  Header: A fixed set of fields: A magic number GGUF, a version number, the number of tensors in the file, the number of metadata key-value pairs. 
+2.  Metadata: a flat list of typed key-value pairs. Each entry has a key string, a type identifier and a value. THis is where the tokenizer vocabulary, merge rules and model configuration live. 
+3.  Tensor info: a list of entries, one per tensor, each containing the tensor's name, shape, datatype, offset into the data section. 
+4.  Tensor data: the raw weight bytes, each tensor aligned to 32 bytes. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

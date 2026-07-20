@@ -16,6 +16,7 @@ namespace bz{
 
 typedef uint32_t u32; 
 typedef uint64_t u64; 
+typedef uint8_t  u08; 
 typedef int32_t  i32; 
 typedef int64_t  i64; 
 typedef float  	 f32; 
@@ -86,6 +87,7 @@ public:
 
 	bool is_contiguous() const;
 	tensor contiguous() const;
+
 	//	seeding the RNG 
 	static void manual_seed(u32 seed){rand_engine.seed(seed);}
 
@@ -186,6 +188,7 @@ public:
 	friend tensor transpose(const tensor& t, u32 dim0, u32 dim1);
 	friend tensor reshape(const tensor& t, vi32 new_shape);
 	friend tensor concat(const std::vector<tensor> tensorlist, i32 axis);
+	static tensor slice(const tensor target, const i32 axis, const i32 start, const i32 end);
 
 
 	// void T(u32 dim0, u32 dim1);

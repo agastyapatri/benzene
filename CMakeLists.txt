@@ -13,6 +13,7 @@ set(SOURCES
 	src/tensor.cpp 
 	src/nn.cpp
 	gpt2/gpt2.cpp
+	src/linalg.cpp
 )
 
 add_executable(benzene main.cpp ${SOURCES})

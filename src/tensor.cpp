@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <fstream> 
 #include <cassert>
+#include <sstream> 
 #include <cfloat>
 #include <functional>
 #include <initializer_list>
@@ -1248,6 +1249,20 @@ tensor tensor::load(std::string path){
 
 
 
+tensor tensor::slice(const tensor target, const i32 axis, const i32 start, const i32 end){
+	// vi32 shape = target._shape; 
+	tensor out; 
+	out._ndim = target._ndim; 
+	out._shape.resize(out._ndim, 1);
+	std::copy(target._shape.begin(), target._shape.end(), out._shape.begin());
+	out._shape[axis] = end - start;
+
+
+
+	//	copy data here
+
+	return out;
+}
 
 
 

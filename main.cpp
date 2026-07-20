@@ -1,34 +1,12 @@
 #include "tensor.hpp"
-#include "nn.hpp"
-#include "gpt2.hpp"
-#include <chrono> 
-namespace gpt2 = bz::gpt2;
-using tensor   = bz::tensor;
-namespace nn   = bz::nn;
-
-constexpr bz::i32 batch_size = 2;
-constexpr bz::i32 seq_len =  4;
-constexpr bz::i32 embd_dim = 768;
-constexpr bz::i32 num_heads =  2;
-
-
-
-
-
-
-
-
-
-
+#include "linalg.hpp"
+using tensor = bz::tensor;
+namespace linalg = bz::linalg;
 
 
 int main(){
-	tensor t1 = tensor::randn({5,5,5});
-	tensor::save(t1, "test.npy");
-	tensor t2 = tensor::load("test.npy");
-	std::cout << t2 << std::endl;
-
-
-
-
+	bz::tensor::manual_seed(0);
+	tensor a = tensor::ones({5,5});
+	tensor b = linalg::trace(a, 1);
+	return 0;
 }

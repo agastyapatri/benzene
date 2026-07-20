@@ -1,5 +1,6 @@
-import numpy as np 
+import numpy as np
+
 if __name__ == "__main__":
-    with open("test.npy", "rb") as file: 
-        x = np.load(file)
-    print(x.shape)
+    x = np.ones((5, 5))
+    y = np.linalg.trace(x, offset=2)
+    print(y)
